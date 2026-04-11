@@ -23,51 +23,42 @@ import { TopNav } from '../../components/layout/TopNav'
 import { Sidebar } from '../../components/layout/Sidebar'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
-import { getIdeas, getVoteResults, getCustomers, getCustomIdeas } from '../../api/client'
-import type { Idea, VoteResults, UserProfile, CustomIdea } from '../../types'
+import { useIdeasStore } from '../../stores/ideasStore'
+import { useCustomersStore } from '../../stores/customersStore'
+import { useResultsStore } from '../../stores/resultsStore'
 
 export default function TeamDashboard() {
   const navigate = useNavigate()
   const [loaded, setLoaded] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const [ideas, setIdeas] = useState<Idea[]>([])
-  const [voteResults, setVoteResults] = useState<VoteResults | null>(null)
-  const [customers, setCustomers] = useState<UserProfile[]>([])
-  const [customIdeas, setCustomIdeas] = useState<CustomIdea[]>([])
+  const { ideas, fetchIdeas } = useIdeasStore()
+  const { customers, fetchCustomers, loading: customersLoading, error: customersError } = useCustomersStore()
+  const { voteResults, customIdeas, fetchAll, loading: resultsLoading, error: resultsError } = useResultsStore()
+
+  const loading = customersLoading || resultsLoading
+  const error = customersError || resultsError
 
   useEffect(() => {
-    let cancelled = false
-
-    async function fetchData() {
-      setLoading(true)
-      setError(null)
-      try {
-        const [ideasData, votesData, customersData, customIdeasData] = await Promise.all([
-          getIdeas().catch(() => [] as Idea[]),
-          getVoteResults().catch(() => null),
-          getCustomers().catch(() => [] as UserProfile[]),
-          getCustomIdeas().catch(() => [] as CustomIdea[]),
-        ])
-        if (cancelled) return
-        setIdeas(ideasData)
-        setVoteResults(votesData)
-        setCustomers(customersData)
-        setCustomIdeas(customIdeasData)
-      } catch (err) {
-        if (!cancelled) setError((err as Error).message)
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-          setLoaded(true)
-        }
-      }
+    const load = async () => {
+      await Promise.all([
+        fetchIdeas(),
+        fetchCustomers(),
+        fetchAll(),
+      ])
+      setLoaded(true)
     }
+    load()
+  }, [fetchIdeas, fetchCustomers, fetchAll])
 
-    fetchData()
-    return () => { cancelled = true }
-  }, [])
+  // Polling refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchIdeas()
+      fetchCustomers()
+      fetchAll()
+    }, 30_000)
+    return () => clearInterval(interval)
+  }, [fetchIdeas, fetchCustomers, fetchAll])
 
   // Computed values
   const votersCount = voteResults?.totalVoters ?? 0
@@ -114,7 +105,7 @@ export default function TeamDashboard() {
       color: c.hasVoted ? 'text-success' : 'text-accent',
     }))
 
-  if (loading) {
+  if (loading && !loaded) {
     return (
       <AppShell topNav={<TopNav />} sidebar={<Sidebar />}>
         <div className="flex items-center justify-center h-[60vh]">

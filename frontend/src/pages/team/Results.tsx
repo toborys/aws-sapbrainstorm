@@ -18,8 +18,9 @@ import { Sidebar } from '../../components/layout/Sidebar'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
-import { getIdeas, getVoteResults, getCustomIdeas } from '../../api/client'
-import type { Idea, VoteResults, CustomIdea, IdeaCategory } from '../../types'
+import { useIdeasStore } from '../../stores/ideasStore'
+import { useResultsStore } from '../../stores/resultsStore'
+import type { IdeaCategory } from '../../types'
 
 const CATEGORIES: IdeaCategory[] = [
   'Monitoring & Observability',
@@ -58,39 +59,14 @@ const trophyIcons: Record<number, string> = {
 
 export default function TeamResults() {
   const [categoryFilter, setCategoryFilter] = useState<IdeaCategory | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const [ideas, setIdeas] = useState<Idea[]>([])
-  const [voteResults, setVoteResults] = useState<VoteResults | null>(null)
-  const [customIdeas, setCustomIdeas] = useState<CustomIdea[]>([])
+  const { ideas, fetchIdeas } = useIdeasStore()
+  const { voteResults, customIdeas, fetchAll, loading, error } = useResultsStore()
 
   useEffect(() => {
-    let cancelled = false
-
-    async function fetchData() {
-      setLoading(true)
-      setError(null)
-      try {
-        const [ideasData, votesData, customIdeasData] = await Promise.all([
-          getIdeas().catch(() => [] as Idea[]),
-          getVoteResults().catch(() => null),
-          getCustomIdeas().catch(() => [] as CustomIdea[]),
-        ])
-        if (cancelled) return
-        setIdeas(ideasData)
-        setVoteResults(votesData)
-        setCustomIdeas(customIdeasData)
-      } catch (err) {
-        if (!cancelled) setError((err as Error).message)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    fetchData()
-    return () => { cancelled = true }
-  }, [])
+    fetchIdeas()
+    fetchAll()
+  }, [fetchIdeas, fetchAll])
 
   // Build ranked results from real data
   const rankedResults = (() => {

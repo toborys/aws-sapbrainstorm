@@ -281,7 +281,15 @@ export default function TeamIdeas() {
   const [newSolution, setNewSolution] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<IdeaCategory | null>(null)
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
+    try {
+      const saved = localStorage.getItem('apx-ideas-view-mode')
+      if (saved === 'list' || saved === 'grid') return saved
+    } catch {
+      // Ignore
+    }
+    return 'list'
+  })
   const [_saving, setSaving] = useState(false)
 
   const sensors = useSensors(
@@ -292,6 +300,15 @@ export default function TeamIdeas() {
   useEffect(() => {
     fetchIdeas()
   }, [fetchIdeas])
+
+  // Persist viewMode to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('apx-ideas-view-mode', viewMode)
+    } catch {
+      // Ignore
+    }
+  }, [viewMode])
 
   const sorted = [...ideas].sort((a, b) => a.order - b.order)
 

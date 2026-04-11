@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import { Input } from '../../components/ui/Input'
@@ -9,6 +9,8 @@ import { scheduleTokenRefresh } from '../../lib/token-refresh'
 
 const CUSTOMER_POOL_ID = import.meta.env.VITE_CUSTOMER_POOL_ID || ''
 const CUSTOMER_CLIENT_ID = import.meta.env.VITE_CUSTOMER_CLIENT_ID || ''
+const CHALLENGE_KEY = 'apx-customer-challenge-session'
+const CHALLENGE_EMAIL_KEY = 'apx-customer-challenge-email'
 
 export default function CustomerLogin() {
   const [email, setEmail] = useState('')
@@ -20,7 +22,28 @@ export default function CustomerLogin() {
   const login = useAuthStore((s) => s.login)
   const addToast = useUiStore((s) => s.addToast)
 
+  // Restore challenge session from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const savedSession = sessionStorage.getItem(CHALLENGE_KEY)
+      const savedEmail = sessionStorage.getItem(CHALLENGE_EMAIL_KEY)
+      if (savedSession) {
+        setChallengeSession(savedSession)
+        if (savedEmail) setEmail(savedEmail)
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, [])
+
   const completeLogin = (idToken: string) => {
+    // Clear challenge session from storage
+    try {
+      sessionStorage.removeItem(CHALLENGE_KEY)
+      sessionStorage.removeItem(CHALLENGE_EMAIL_KEY)
+    } catch {
+      // Ignore
+    }
     const claims = parseJwt(idToken)
     login(
       {
@@ -46,6 +69,13 @@ export default function CustomerLogin() {
 
       if (result.challengeName === 'NEW_PASSWORD_REQUIRED') {
         setChallengeSession(result.session!)
+        // Persist challenge session to sessionStorage
+        try {
+          sessionStorage.setItem(CHALLENGE_KEY, result.session!)
+          sessionStorage.setItem(CHALLENGE_EMAIL_KEY, email)
+        } catch {
+          // Ignore
+        }
         addToast({ type: 'info', message: 'Musisz ustawic nowe haslo.' })
       } else {
         completeLogin(result.tokens.idToken)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Sparkles, X } from 'lucide-react'
 import { AppShell } from '../../components/layout/AppShell'
@@ -9,22 +9,44 @@ import { useIdeasStore } from '../../stores/ideasStore'
 import { useVotesStore } from '../../stores/votesStore'
 import { useUiStore } from '../../stores/uiStore'
 
+const CUSTOM_IDEA_KEY = 'apx-custom-idea-draft'
+
 export default function CustomerSubmit() {
   const navigate = useNavigate()
   const { ideas, selectedIds, toggleSelect } = useIdeasStore()
   const { submitting, submitVotes } = useVotesStore()
   const addToast = useUiStore((s) => s.addToast)
 
-  const [customIdea, setCustomIdea] = useState('')
+  const [customIdea, setCustomIdea] = useState(() => {
+    try {
+      return sessionStorage.getItem(CUSTOM_IDEA_KEY) || ''
+    } catch {
+      return ''
+    }
+  })
   const [consent, setConsent] = useState(false)
   const charCount = customIdea.length
   const maxChars = 1000
 
-  const selectedIdeas = ideas.filter((i) => selectedIds.has(i.id))
+  // Persist customIdea to sessionStorage on every keystroke
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CUSTOM_IDEA_KEY, customIdea)
+    } catch {
+      // Ignore storage errors
+    }
+  }, [customIdea])
+
+  const selectedIdeas = ideas.filter((i) => selectedIds.includes(i.id))
 
   const handleSubmit = async () => {
-    const success = await submitVotes(Array.from(selectedIds), customIdea || undefined)
+    const success = await submitVotes([...selectedIds], customIdea || undefined)
     if (success) {
+      try {
+        sessionStorage.removeItem(CUSTOM_IDEA_KEY)
+      } catch {
+        // Ignore
+      }
       navigate('/vote/thankyou')
     } else {
       addToast({ type: 'error', message: 'Blad podczas wysylania glosow. Sprobuj ponownie.' })

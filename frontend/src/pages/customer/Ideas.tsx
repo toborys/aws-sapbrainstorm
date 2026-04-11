@@ -5,6 +5,7 @@ import { AppShell } from '../../components/layout/AppShell'
 import { IdeaGrid } from '../../components/ideas/IdeaGrid'
 import { VoteProgress } from '../../components/voting/VoteProgress'
 import { useIdeasStore } from '../../stores/ideasStore'
+import { useVotesStore } from '../../stores/votesStore'
 import { useAuthStore } from '../../stores/authStore'
 
 const MAX_SELECTIONS = 5
@@ -14,10 +15,18 @@ export default function CustomerIdeas() {
   const user = useAuthStore((s) => s.user)
   const { ideas, selectedIds, loading, categoryFilter, fetchIdeas, toggleSelect, setCategoryFilter } =
     useIdeasStore()
+  const { hasVoted, checkVotingStatus } = useVotesStore()
 
   useEffect(() => {
     fetchIdeas()
-  }, [fetchIdeas])
+    checkVotingStatus()
+  }, [fetchIdeas, checkVotingStatus])
+
+  useEffect(() => {
+    if (hasVoted) {
+      navigate('/vote/thankyou', { replace: true })
+    }
+  }, [hasVoted, navigate])
 
   const activeIdeas = ideas.filter((i) => i.status === 'active').sort((a, b) => a.order - b.order)
 
@@ -26,7 +35,7 @@ export default function CustomerIdeas() {
   }
 
   const selectedNames = activeIdeas
-    .filter((i) => selectedIds.has(i.id))
+    .filter((i) => selectedIds.includes(i.id))
     .map((i) => i.name)
 
   return (
@@ -65,13 +74,13 @@ export default function CustomerIdeas() {
               <div
                 key={i}
                 className={`w-8 h-1.5 rounded-full transition-all duration-300 ${
-                  i < selectedIds.size ? 'bg-accent' : 'bg-surface-2'
+                  i < selectedIds.length ? 'bg-accent' : 'bg-surface-2'
                 }`}
               />
             ))}
           </div>
           <span className="text-sm text-text-muted">
-            Wybrano {selectedIds.size} z {MAX_SELECTIONS} pomyslow
+            Wybrano {selectedIds.length} z {MAX_SELECTIONS} pomyslow
           </span>
         </div>
 
@@ -94,7 +103,7 @@ export default function CustomerIdeas() {
 
       {/* Fixed bottom vote bar */}
       <VoteProgress
-        selected={selectedIds.size}
+        selected={selectedIds.length}
         max={MAX_SELECTIONS}
         onSubmit={() => navigate('/vote/submit')}
         selectedNames={selectedNames}

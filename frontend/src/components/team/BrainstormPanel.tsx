@@ -109,21 +109,51 @@ export default function BrainstormPanel() {
   const { ideas, fetchIdeas } = useIdeasStore()
   const { addToast } = useUiStore()
 
-  // Agent selection — default: first 3 from list
-  const [selectedAgents, setSelectedAgents] = useState<Set<string>>(
-    new Set(['sap-architect', 'product-strategist', 'sap-customer'])
-  )
+  // Agent selection — persisted to localStorage
+  const [selectedAgents, setSelectedAgents] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('brainstorm-selected-agents')
+      if (saved) {
+        const arr = JSON.parse(saved) as string[]
+        if (Array.isArray(arr) && arr.length > 0) return new Set(arr)
+      }
+    } catch {
+      // Ignore
+    }
+    return new Set(['sap-architect', 'product-strategist', 'sap-customer'])
+  })
 
   // Config
   const [category, setCategory] = useState<IdeaCategory | 'Dowolna'>('Dowolna')
   const [ideaType, setIdeaType] = useState<IdeaTypeFilter>('all')
-  const [customPrompt, setCustomPrompt] = useState('')
+  const [customPrompt, setCustomPrompt] = useState(() => {
+    try {
+      return sessionStorage.getItem('brainstorm-custom-prompt') || ''
+    } catch {
+      return ''
+    }
+  })
   const [ideaCount, setIdeaCount] = useState<number>(5)
 
-  // View / Generation state
-  const [viewMode, setViewMode] = useState<ViewMode>('config')
-  const [brainstormResult, setBrainstormResult] = useState<BrainstormResult | null>(null)
+  // View / Generation state — restore from localStorage if results exist
+  const [brainstormResult, setBrainstormResult] = useState<BrainstormResult | null>(() => {
+    try {
+      const saved = localStorage.getItem('brainstorm-current-result')
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      return null
+    }
+  })
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('brainstorm-current-result')
+      return saved ? 'results' : 'config'
+    } catch {
+      return 'config'
+    }
+  })
   const [addingIdea, setAddingIdea] = useState<string | null>(null)
+  const [addingAll, setAddingAll] = useState(false)
   const [litAgentIdx, setLitAgentIdx] = useState(0)
   const litInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -147,6 +177,37 @@ export default function BrainstormPanel() {
   useEffect(() => {
     localStorage.setItem('brainstorm-history-v2', JSON.stringify(sessionHistory))
   }, [sessionHistory])
+
+  // Persist selectedAgents to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('brainstorm-selected-agents', JSON.stringify(Array.from(selectedAgents)))
+    } catch {
+      // Ignore
+    }
+  }, [selectedAgents])
+
+  // Persist customPrompt to sessionStorage
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('brainstorm-custom-prompt', customPrompt)
+    } catch {
+      // Ignore
+    }
+  }, [customPrompt])
+
+  // Persist brainstormResult to localStorage
+  useEffect(() => {
+    try {
+      if (brainstormResult) {
+        localStorage.setItem('brainstorm-current-result', JSON.stringify(brainstormResult))
+      } else {
+        localStorage.removeItem('brainstorm-current-result')
+      }
+    } catch {
+      // Ignore
+    }
+  }, [brainstormResult])
 
   useEffect(() => {
     fetchIdeas()
@@ -370,9 +431,43 @@ export default function BrainstormPanel() {
   }
 
   const handleAddAll = async () => {
-    if (!brainstormResult) return
-    for (let i = 0; i < brainstormResult.ideas.length; i++) {
-      await handleAddIdea(brainstormResult.ideas[i], i)
+    if (!brainstormResult || addingAll) return
+    setAddingAll(true)
+    let count = 0
+    try {
+      for (let i = 0; i < brainstormResult.ideas.length; i++) {
+        const idea = brainstormResult.ideas[i]
+        try {
+          await createIdea({
+            name: idea.name,
+            tagline: idea.tagline,
+            problem: idea.problem,
+            solution: idea.solution,
+            architecture: idea.architecture,
+            complexity: idea.complexity,
+            mvpTime: idea.mvpTime,
+            risk: idea.risk,
+            riskNote: idea.riskNote,
+            mrr: idea.mrr,
+            model: idea.model,
+            selfService: idea.selfService,
+            potential: idea.potential,
+            category: (idea.category as IdeaCategory) || 'Cloud & Infrastructure',
+            status: 'active',
+            order: ideas.length + i + 1,
+          })
+          count++
+        } catch {
+          // Continue adding remaining ideas
+        }
+      }
+      // Fetch ideas once at the end
+      await fetchIdeas()
+      addToast({ type: 'success', message: `Dodano ${count} rekomendacji do portfolio` })
+    } catch (err) {
+      addToast({ type: 'error', message: `Blad: ${(err as Error).message}` })
+    } finally {
+      setAddingAll(false)
     }
   }
 
@@ -381,6 +476,12 @@ export default function BrainstormPanel() {
     setBrainstormResult(null)
     setExpandedProblems(new Set())
     setExpandedNotes(new Set())
+    // Clear persisted result
+    try {
+      localStorage.removeItem('brainstorm-current-result')
+    } catch {
+      // Ignore
+    }
   }
 
   const handleExportReport = () => {
@@ -845,10 +946,11 @@ export default function BrainstormPanel() {
                 </Button>
                 <Button
                   variant="primary"
-                  icon={<Plus className="w-4 h-4" />}
+                  icon={addingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   onClick={handleAddAll}
+                  disabled={addingAll}
                 >
-                  Dodaj wszystkie do portfolio
+                  {addingAll ? 'Dodawanie...' : 'Dodaj wszystkie do portfolio'}
                 </Button>
               </div>
             </div>
@@ -1098,10 +1200,11 @@ export default function BrainstormPanel() {
                   </Button>
                   <Button
                     variant="primary"
-                    icon={<Plus className="w-4 h-4" />}
+                    icon={addingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     onClick={handleAddAll}
+                    disabled={addingAll}
                   >
-                    Dodaj wszystkie do portfolio
+                    {addingAll ? 'Dodawanie...' : 'Dodaj wszystkie do portfolio'}
                   </Button>
                 </div>
               </div>

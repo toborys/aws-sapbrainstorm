@@ -19,7 +19,9 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
-import { getCustomers, inviteCustomer } from '../../api/client'
+import { inviteCustomer } from '../../api/client'
+import { useCustomersStore } from '../../stores/customersStore'
+import { useUiStore } from '../../stores/uiStore'
 import type { UserProfile } from '../../types'
 
 type CustomerStatus = 'invited' | 'active' | 'voted'
@@ -37,11 +39,10 @@ const statusConfig = {
 }
 
 export default function TeamCustomers() {
-  const [customers, setCustomers] = useState<UserProfile[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { customers, loading, error, fetchCustomers } = useCustomersStore()
+  const addToast = useUiStore((s) => s.addToast)
+
   const [inviting, setInviting] = useState(false)
-  const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showBulkModal, setShowBulkModal] = useState(false)
@@ -54,28 +55,7 @@ export default function TeamCustomers() {
 
   useEffect(() => {
     fetchCustomers()
-  }, [])
-
-  // Auto-dismiss toast
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => setToastMessage(null), 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [toastMessage])
-
-  async function fetchCustomers() {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await getCustomers()
-      setCustomers(data)
-    } catch (err) {
-      setError((err as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [fetchCustomers])
 
   const filteredCustomers = customers.filter((c) => {
     const status = deriveStatus(c)
@@ -98,23 +78,23 @@ export default function TeamCustomers() {
       setInviteEmail('')
       setInviteCompany('')
       setInviteDeadline('')
-      setToastMessage('Zaproszenie wyslane pomyslnie')
+      addToast({ type: 'success', message: 'Zaproszenie wyslane pomyslnie' })
       // Refresh customer list
       await fetchCustomers()
     } catch (err) {
-      setToastMessage(`Blad: ${(err as Error).message}`)
+      addToast({ type: 'error', message: `Blad: ${(err as Error).message}` })
     } finally {
       setInviting(false)
     }
   }
 
   const handleResend = (_userId: string) => {
-    setToastMessage('Ponowne wysylanie zaproszen: Coming soon')
+    addToast({ type: 'info', message: 'Ponowne wysylanie zaproszen: Coming soon' })
   }
 
   const handleBulkImport = () => {
     setShowBulkModal(false)
-    setToastMessage('Import zbiorczy: Coming soon')
+    addToast({ type: 'info', message: 'Import zbiorczy: Coming soon' })
   }
 
   const stats = {
@@ -124,7 +104,7 @@ export default function TeamCustomers() {
     voted: customers.filter((c) => deriveStatus(c) === 'voted').length,
   }
 
-  if (loading) {
+  if (loading && customers.length === 0) {
     return (
       <AppShell topNav={<TopNav />} sidebar={<Sidebar />}>
         <div className="flex items-center justify-center h-[60vh]">
@@ -165,13 +145,6 @@ export default function TeamCustomers() {
         {error && (
           <div className="mb-6 p-4 bg-error/10 border border-error/30 rounded-xl text-sm text-error">
             Blad ladowania danych: {error}
-          </div>
-        )}
-
-        {/* Toast notification */}
-        {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-surface-2 border border-border rounded-xl shadow-xl text-sm text-text animate-fade-in">
-            {toastMessage}
           </div>
         )}
 

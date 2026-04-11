@@ -6,7 +6,7 @@ import type { Idea, IdeaCategory } from '../../types'
 
 interface IdeaGridProps {
   ideas: Idea[]
-  selectedIds: Set<string>
+  selectedIds: string[]
   onToggle: (id: string) => void
   categoryFilter: IdeaCategory | null
   onCategoryChange: (cat: IdeaCategory | null) => void
@@ -186,7 +186,7 @@ export function IdeaGrid({
             key={idea.id}
             idea={idea}
             index={idx}
-            selected={selectedIds.has(idea.id)}
+            selected={selectedIds.includes(idea.id)}
             onSelect={() => onToggle(idea.id)}
             onViewDetails={() => setModalIdea(idea)}
             variant={variant}
@@ -215,7 +215,7 @@ export function IdeaGrid({
         idea={modalIdea}
         isOpen={!!modalIdea}
         onClose={() => setModalIdea(null)}
-        isSelected={modalIdea ? selectedIds.has(modalIdea.id) : false}
+        isSelected={modalIdea ? selectedIds.includes(modalIdea.id) : false}
         onToggle={onToggle}
         variant={variant}
       />

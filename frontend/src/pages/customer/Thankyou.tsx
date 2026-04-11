@@ -3,10 +3,26 @@ import confetti from 'canvas-confetti'
 import { PartyPopper, Mail, Calendar } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { useIdeasStore } from '../../stores/ideasStore'
+import { useVotesStore } from '../../stores/votesStore'
 
 export default function CustomerThankyou() {
   const { ideas, selectedIds } = useIdeasStore()
-  const selectedIdeas = ideas.filter((i) => selectedIds.has(i.id))
+  const { votes, fetchMyVotes } = useVotesStore()
+
+  const selectedIdeas = ideas.filter((i) => selectedIds.includes(i.id))
+
+  // If selectedIds is empty (e.g. page refresh), try to fetch votes from API
+  useEffect(() => {
+    if (selectedIds.length === 0 && !votes) {
+      fetchMyVotes()
+    }
+  }, [selectedIds.length, votes, fetchMyVotes])
+
+  // Derive voted idea IDs from API response if store selection is empty
+  const votedIdeaIds = selectedIds.length > 0 ? selectedIds : (votes?.votedIdeas ?? [])
+  const displayIdeas = selectedIdeas.length > 0
+    ? selectedIdeas
+    : ideas.filter((i) => votedIdeaIds.includes(i.id))
 
   useEffect(() => {
     // Fire confetti
@@ -58,11 +74,11 @@ export default function CustomerThankyou() {
         </p>
 
         {/* Summary of votes */}
-        {selectedIdeas.length > 0 && (
+        {displayIdeas.length > 0 && (
           <Card className="text-left mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <h3 className="text-sm font-semibold text-text mb-3">Twoje wybory</h3>
             <ul className="space-y-2">
-              {selectedIdeas.map((idea, i) => (
+              {displayIdeas.map((idea, i) => (
                 <li key={idea.id} className="flex items-center gap-2 text-sm">
                   <span className="text-accent font-mono">{i + 1}.</span>
                   <span className="text-text">{idea.name}</span>
@@ -70,6 +86,16 @@ export default function CustomerThankyou() {
                 </li>
               ))}
             </ul>
+          </Card>
+        )}
+
+        {/* If we only have IDs but no idea objects, show IDs */}
+        {displayIdeas.length === 0 && votedIdeaIds.length > 0 && (
+          <Card className="text-left mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <h3 className="text-sm font-semibold text-text mb-3">Twoje wybory</h3>
+            <p className="text-sm text-text-muted">
+              Zaglosowales na {votedIdeaIds.length} pomyslow.
+            </p>
           </Card>
         )}
 

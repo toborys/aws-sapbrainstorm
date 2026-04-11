@@ -35,21 +35,19 @@ export function TopNav() {
     : '?'
 
   return (
-    <header className="sticky top-0 z-40 h-16 glass border-b border-border">
+    <header className="h-16 bg-bg border-b border-border relative z-40">
       <div className="h-full px-6 flex items-center justify-between">
         {/* Left: Brand */}
         <div className="flex items-center gap-3">
           {/* Logo mark */}
           <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-accent/20 to-purple/20 flex items-center justify-center border border-accent/10">
-            <span className="text-sm font-bold gradient-text">S</span>
+            <span className="text-sm font-bold gradient-text">A</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-accent font-semibold tracking-tight text-sm">
-              SAP
-              <span className="text-text-muted mx-1.5">&times;</span>
-              <span className="text-orange">AWS</span>
+            <span className="text-text font-semibold tracking-tight text-sm">
+              APX
             </span>
-            <span className="text-text font-medium text-sm hidden sm:inline">
+            <span className="text-text-muted font-medium text-sm hidden sm:inline">
               Innovation Platform
             </span>
           </div>
