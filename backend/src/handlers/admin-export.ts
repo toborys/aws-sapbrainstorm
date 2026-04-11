@@ -56,15 +56,15 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     }
 
     // Generate CSV
-    const csvHeader = 'IdeaId,Title,Category,Status,Effort,Impact,VoteCount,CreatedAt\n';
+    const csvHeader = 'IdeaId,Name,Category,Status,Complexity,Risk,VoteCount,CreatedAt\n';
     const csvRows = ideas.map((idea) => {
       const fields = [
         idea.id,
-        `"${(idea.title as string || '').replace(/"/g, '""')}"`,
+        `"${(idea.name as string || '').replace(/"/g, '""')}"`,
         idea.category,
         idea.status,
-        idea.effort || '',
-        idea.impact || '',
+        idea.complexity || '',
+        idea.risk || '',
         voteCounts[idea.id as string] || 0,
         idea.createdAt,
       ];

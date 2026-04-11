@@ -1,12 +1,8 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import {
-  DynamoDBDocumentClient,
-  BatchWriteCommand,
-  GetCommand,
-} from "@aws-sdk/lib-dynamodb";
-import { readFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, BatchWriteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,31 +28,29 @@ interface Idea {
 }
 
 function getTableName(): string {
-  const envArg = process.argv.find((arg) => arg.startsWith("--env="));
-  if (envArg) {
-    const env = envArg.split("=")[1];
-    return `SapInnovation-${env}-ideas`;
-  }
-
   if (process.env.TABLE_NAME) {
     return process.env.TABLE_NAME;
   }
-
-  return "SapInnovation-production-ideas";
+  const envArg = process.argv.find((arg) => arg.startsWith('--env='));
+  if (envArg) {
+    const env = envArg.split('=')[1];
+    return `SapInnovation-${env}`;
+  }
+  return 'SapInnovation-staging';
 }
 
 async function ideaExists(
   docClient: DynamoDBDocumentClient,
   tableName: string,
-  id: string
+  id: string,
 ): Promise<boolean> {
   try {
     const result = await docClient.send(
       new GetCommand({
         TableName: tableName,
-        Key: { id },
-        ProjectionExpression: "id",
-      })
+        Key: { PK: `IDEA#${id}`, SK: 'METADATA' },
+        ProjectionExpression: 'PK',
+      }),
     );
     return !!result.Item;
   } catch {
@@ -68,14 +62,15 @@ async function seedIdeas(): Promise<void> {
   const tableName = getTableName();
   console.log(`Seeding ideas into table: ${tableName}`);
 
-  const dataPath = resolve(__dirname, "../../../data/ideas.json");
-  const rawData = readFileSync(dataPath, "utf-8");
+  const dataPath = resolve(__dirname, '../../../data/ideas.json');
+  const rawData = readFileSync(dataPath, 'utf-8');
   const ideas: Idea[] = JSON.parse(rawData);
 
   const client = new DynamoDBClient({});
-  const docClient = DynamoDBDocumentClient.from(client);
+  const docClient = DynamoDBDocumentClient.from(client, {
+    marshallOptions: { removeUndefinedValues: true },
+  });
 
-  // Check which ideas already exist (idempotent)
   const newIdeas: Idea[] = [];
   for (const idea of ideas) {
     const exists = await ideaExists(docClient, tableName, idea.id);
@@ -87,22 +82,25 @@ async function seedIdeas(): Promise<void> {
   }
 
   if (newIdeas.length === 0) {
-    console.log("All ideas already exist. Nothing to seed.");
+    console.log('All ideas already exist. Nothing to seed.');
     return;
   }
 
   console.log(`Writing ${newIdeas.length} new ideas...`);
 
-  // BatchWrite supports max 25 items per request
   const batchSize = 25;
   for (let i = 0; i < newIdeas.length; i += batchSize) {
     const batch = newIdeas.slice(i, i + batchSize);
     const putRequests = batch.map((idea) => ({
       PutRequest: {
         Item: {
+          PK: `IDEA#${idea.id}`,
+          SK: 'METADATA',
+          GSI1PK: `CATEGORY#${idea.category}`,
+          GSI1SK: `IDEA#${idea.id}`,
           ...idea,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdBy: 'seed-script',
         },
       },
     }));
@@ -112,7 +110,7 @@ async function seedIdeas(): Promise<void> {
         RequestItems: {
           [tableName]: putRequests,
         },
-      })
+      }),
     );
 
     for (const idea of batch) {
@@ -124,6 +122,6 @@ async function seedIdeas(): Promise<void> {
 }
 
 seedIdeas().catch((err) => {
-  console.error("Seed failed:", err);
+  console.error('Seed failed:', err);
   process.exit(1);
 });

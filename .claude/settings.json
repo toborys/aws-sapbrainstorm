@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(aws cognito-idp:*)",
+      "Bash(MSYS_NO_PATHCONV=1 aws s3 rm s3://sap-innovation-data-staging-195275651669/brainstorm/ --recursive --profile sap-sandbox)",
+      "Bash(aws dynamodb:*)",
+      "Bash(python3 -c ':*)",
+      "Bash(npx cdk:*)"
+    ]
+  }
+}

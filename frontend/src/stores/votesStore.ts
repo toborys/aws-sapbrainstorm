@@ -9,7 +9,7 @@ interface VotesState {
   error: string | null
   submitting: boolean
 
-  submitVotes: (votedIdeas: string[], customIdea?: string) => Promise<boolean>
+  submitVotes: (ideaIds: string[], customIdea?: string) => Promise<boolean>
   fetchMyVotes: () => Promise<void>
 }
 
@@ -20,10 +20,10 @@ export const useVotesStore = create<VotesState>((set) => ({
   error: null,
   submitting: false,
 
-  submitVotes: async (votedIdeas, customIdea) => {
+  submitVotes: async (ideaIds, customIdea) => {
     set({ submitting: true, error: null })
     try {
-      const result = await api.submitVotes({ votedIdeas, customIdea })
+      const result = await api.submitVotes({ ideaIds, customIdea })
       set({ votes: result, hasVoted: true, submitting: false })
       return true
     } catch (err) {

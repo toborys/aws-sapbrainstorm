@@ -25,15 +25,19 @@ export default function CustomerIdeas() {
     toggleSelect(id, MAX_SELECTIONS)
   }
 
+  const selectedNames = activeIdeas
+    .filter((i) => selectedIds.has(i.id))
+    .map((i) => i.name)
+
   return (
     <AppShell
       topNav={
-        <header className="h-16 bg-surface border-b border-border px-6 flex items-center justify-between">
+        <header className="h-16 bg-surface/80 backdrop-blur-md border-b border-border px-6 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-accent/20 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-accent" />
+            <div className="w-8 h-8 bg-gradient-to-br from-accent to-accent/60 rounded-lg flex items-center justify-center shadow-sm">
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold text-text">SAP Innovation Platform</span>
+            <span className="font-semibold text-text">APX Innovation Platform</span>
           </div>
           {user && (
             <p className="text-sm text-text-muted">{user.email}</p>
@@ -41,24 +45,34 @@ export default function CustomerIdeas() {
         </header>
       }
     >
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      {/* Main content with bottom padding for fixed vote bar */}
+      <div className="max-w-6xl mx-auto px-6 pt-8 pb-32">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-in">
           <h1 className="font-display text-3xl text-text mb-2">
             Wybierz najlepsze pomysly
           </h1>
           <p className="text-text-muted">
-            Przegladaj innowacyjne rozwiazania SAP na AWS i wybierz do {MAX_SELECTIONS} pomyslow, ktore Twoim zdaniem maja najwiekszy potencjal.
+            Przegladaj innowacyjne rozwiazania SAP na AWS i wybierz do {MAX_SELECTIONS} pomyslow,
+            ktore Twoim zdaniem maja najwiekszy potencjal.
           </p>
         </div>
 
-        {/* Vote progress bar (sticky) */}
-        <div className="sticky top-0 z-10 mb-6 -mx-6 px-6 py-3 bg-bg/80 backdrop-blur-sm">
-          <VoteProgress
-            selected={selectedIds.size}
-            max={MAX_SELECTIONS}
-            onSubmit={() => navigate('/vote/submit')}
-          />
+        {/* Progress indicator */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex gap-1">
+            {Array.from({ length: MAX_SELECTIONS }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-8 h-1.5 rounded-full transition-all duration-300 ${
+                  i < selectedIds.size ? 'bg-accent' : 'bg-surface-2'
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-sm text-text-muted">
+            Wybrano {selectedIds.size} z {MAX_SELECTIONS} pomyslow
+          </span>
         </div>
 
         {/* Loading state */}
@@ -77,6 +91,14 @@ export default function CustomerIdeas() {
           />
         )}
       </div>
+
+      {/* Fixed bottom vote bar */}
+      <VoteProgress
+        selected={selectedIds.size}
+        max={MAX_SELECTIONS}
+        onSubmit={() => navigate('/vote/submit')}
+        selectedNames={selectedNames}
+      />
     </AppShell>
   )
 }

@@ -10,20 +10,22 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     const token = extractToken(event);
     if (!token) return unauthorized();
 
+    let userId: string;
     try {
-      await verifyTeamToken(token);
+      const payload = await verifyTeamToken(token);
+      userId = payload.sub;
     } catch {
       return unauthorized('Team access required');
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { title, description, category } = body;
+    const { name, category } = body;
 
-    if (!title || !description || !category) {
-      return badRequest('title, description, and category are required');
+    if (!name || !category) {
+      return badRequest('name and category are required');
     }
 
-    const id = randomUUID();
+    const id = body.id || randomUUID();
     const now = new Date().toISOString();
 
     const item = {
@@ -32,16 +34,29 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
       GSI1PK: `CATEGORY#${category}`,
       GSI1SK: `IDEA#${id}`,
       id,
-      title,
-      description,
+      name,
+      tagline: body.tagline || '',
+      problem: body.problem || '',
+      solution: body.solution || '',
+      architecture: body.architecture || '',
+      awsServices: body.awsServices || [],
+      complexity: body.complexity || 'medium',
+      mvpTime: body.mvpTime || '',
+      risk: body.risk || 'medium',
+      riskNote: body.riskNote || '',
+      mrr: body.mrr || '',
+      model: body.model || '',
+      selfService: body.selfService ?? true,
+      potential: body.potential || 'medium',
       category,
-      status: 'active',
+      categoryGroup: body.categoryGroup || 'technical',
+      targetBuyer: body.targetBuyer || '',
+      customerPerspective: body.customerPerspective || '',
+      differentiator: body.differentiator || '',
+      status: body.status || 'active',
       order: body.order ?? 0,
-      tags: body.tags ?? [],
-      effort: body.effort,
-      impact: body.impact,
       createdAt: now,
-      updatedAt: now,
+      createdBy: userId,
     };
 
     await ddb.send(

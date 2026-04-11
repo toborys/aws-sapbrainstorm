@@ -15,7 +15,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-text mb-1.5"
+            className="block text-sm font-medium text-text-secondary mb-2"
           >
             {label}
           </label>
@@ -23,18 +23,31 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
-          className={`w-full px-3 py-2 bg-surface-2 border rounded-lg text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors ${
-            error ? 'border-danger focus:ring-danger/50' : 'border-border'
-          } ${className}`}
+          className={`
+            w-full px-4 py-2.5
+            bg-surface-2/60 backdrop-blur-sm
+            border rounded-xl
+            text-sm text-text
+            placeholder:text-text-muted
+            focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30
+            transition-all duration-200
+            ${error
+              ? 'border-danger/40 focus:ring-danger/30 focus:border-danger/30'
+              : 'border-border hover:border-border-hover'
+            }
+            ${className}
+          `}
           {...props}
         />
-        {error && <p className="mt-1 text-sm text-danger">{error}</p>}
+        {error && (
+          <p className="mt-1.5 text-xs text-danger">{error}</p>
+        )}
         {helperText && !error && (
-          <p className="mt-1 text-sm text-text-muted">{helperText}</p>
+          <p className="mt-1.5 text-xs text-text-muted">{helperText}</p>
         )}
       </div>
     )
-  }
+  },
 )
 
 Input.displayName = 'Input'

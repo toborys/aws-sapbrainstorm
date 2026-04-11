@@ -23,12 +23,22 @@ export interface Idea {
 }
 
 export type IdeaCategory =
-  | 'Monitoring'
-  | 'Security'
+  | 'Monitoring & Observability'
+  | 'Security & Compliance'
   | 'Automation'
-  | 'Migration'
-  | 'Analytics'
-  | 'Performance';
+  | 'Migration & Modernization'
+  | 'Analytics & Insights'
+  | 'Performance Testing'
+  | 'Cloud & Infrastructure'
+  | 'SAP Solutions'
+  | 'AI & Machine Learning'
+  | 'Cybersecurity'
+  | 'SaaS Products'
+  | 'Professional Services'
+  | 'Sales & Go-to-Market'
+  | 'Customer Success'
+  | 'Internal Tools & Automation'
+  | 'Data & Analytics';
 
 export interface Vote {
   userId: string;
@@ -82,6 +92,8 @@ export interface BrainstormRequest {
   category: IdeaCategory;
   prompt?: string;
   count: number;
+  agents?: string[];
+  categoryGroup?: string;
 }
 
 export interface BrainstormSession {

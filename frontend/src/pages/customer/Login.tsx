@@ -1,35 +1,76 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Sparkles, Lock } from 'lucide-react'
-import { Button } from '../../components/ui/Button'
+import { Lock } from 'lucide-react'
 import { Input } from '../../components/ui/Input'
-import { Card } from '../../components/ui/Card'
 import { useAuthStore } from '../../stores/authStore'
 import { useUiStore } from '../../stores/uiStore'
+import { cognitoLogin, cognitoRespondNewPassword, parseJwt } from '../../lib/cognito-auth'
+import { scheduleTokenRefresh } from '../../lib/token-refresh'
+
+const CUSTOMER_POOL_ID = import.meta.env.VITE_CUSTOMER_POOL_ID || ''
+const CUSTOMER_CLIENT_ID = import.meta.env.VITE_CUSTOMER_CLIENT_ID || ''
 
 export default function CustomerLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [challengeSession, setChallengeSession] = useState<string | null>(null)
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
   const addToast = useUiStore((s) => s.addToast)
+
+  const completeLogin = (idToken: string) => {
+    const claims = parseJwt(idToken)
+    login(
+      {
+        userId: claims.sub as string,
+        email: claims.email as string,
+        company: (claims['custom:company'] as string) || 'Partner',
+        role: 'customer',
+      },
+      idToken,
+      'customer',
+    )
+    scheduleTokenRefresh()
+    addToast({ type: 'success', message: 'Zalogowano pomyslnie!' })
+    navigate('/vote/ideas')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      // TODO: Integrate with Cognito
-      // Placeholder login flow
-      login(
-        { userId: 'temp', email, company: 'Partner', role: 'customer' },
-        'temp-token',
-        'customer'
+      const result = await cognitoLogin(CUSTOMER_POOL_ID, CUSTOMER_CLIENT_ID, email, password)
+
+      if (result.challengeName === 'NEW_PASSWORD_REQUIRED') {
+        setChallengeSession(result.session!)
+        addToast({ type: 'info', message: 'Musisz ustawic nowe haslo.' })
+      } else {
+        completeLogin(result.tokens.idToken)
+      }
+    } catch (err) {
+      addToast({ type: 'error', message: (err as Error).message })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const result = await cognitoRespondNewPassword(
+        CUSTOMER_CLIENT_ID,
+        email,
+        newPassword,
+        challengeSession!,
       )
-      navigate('/vote/ideas')
-    } catch {
-      addToast({ type: 'error', message: 'Nieprawidlowe dane logowania.' })
+      completeLogin(result.tokens.idToken)
+    } catch (err) {
+      addToast({ type: 'error', message: (err as Error).message })
     } finally {
       setLoading(false)
     }
@@ -48,57 +89,95 @@ export default function CustomerLogin() {
       />
 
       {/* Gradient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-accent/10 rounded-full blur-[128px]" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-accent/8 rounded-full blur-[128px]" />
+      <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-success/5 rounded-full blur-[100px]" />
 
       <div className="relative z-10 w-full max-w-md px-4">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/20 rounded-2xl mb-4">
-            <Sparkles className="w-8 h-8 text-accent" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-accent to-accent/60 rounded-2xl mb-5 shadow-lg shadow-accent/20">
+            <span className="text-3xl font-bold text-white">A</span>
           </div>
           <h1 className="font-display text-3xl text-text mb-2">
-            SAP Innovation Platform
+            APX Innovation Platform
           </h1>
-          <p className="text-text-muted text-sm">
-            Platforma glosowania na innowacyjne pomysly
+          <p className="text-text-muted text-sm max-w-xs mx-auto">
+            Platforma innowacji i brainstormingu APX
           </p>
         </div>
 
-        <Card className="backdrop-blur-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="jan@firma.pl"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              label="Haslo"
-              type="password"
-              placeholder="********"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+        <div className="glass rounded-2xl p-8 shadow-2xl">
+          {!challengeSession ? (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <Input
+                label="Email"
+                type="email"
+                placeholder="jan@firma.pl"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Input
+                label="Haslo"
+                type="password"
+                placeholder="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
 
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              className="w-full"
-              loading={loading}
-            >
-              Zaloguj sie
-            </Button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 rounded-xl text-white font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent shadow-lg shadow-accent/20 hover:shadow-accent/30 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  'Zaloguj sie'
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleNewPassword} className="space-y-5">
+              <div className="text-center mb-4">
+                <p className="text-sm text-warning">
+                  Ustaw nowe haslo aby kontynuowac
+                </p>
+              </div>
+              <Input
+                label="Nowe haslo"
+                type="password"
+                placeholder="Min. 8 znakow, wielkie litery, cyfry"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <button
+                type="submit"
+                disabled={loading || newPassword.length < 8}
+                className="w-full py-3 rounded-xl text-white font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent shadow-lg shadow-accent/20 hover:shadow-accent/30 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  'Ustaw haslo i zaloguj'
+                )}
+              </button>
+            </form>
+          )}
+
+          <div className="mt-4 text-center">
+            <button className="text-xs text-accent hover:text-accent-hover transition-colors cursor-pointer">
+              Zapomnialem hasla
+            </button>
+          </div>
 
           <div className="mt-6 flex items-center gap-2 text-xs text-text-muted justify-center">
             <Lock className="w-3.5 h-3.5" />
             <span>Dostep tylko dla zaproszonych partnerow SAP</span>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   )

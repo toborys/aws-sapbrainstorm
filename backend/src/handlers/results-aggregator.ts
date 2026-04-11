@@ -42,7 +42,7 @@ export const handler = async (_event: ScheduledEvent) => {
         );
         return {
           ideaId,
-          title: ideaResult.Item?.title || 'Unknown',
+          title: ideaResult.Item?.name || 'Unknown',
           category: ideaResult.Item?.category || 'Unknown',
           voteCount: voteCounts[ideaId],
         };

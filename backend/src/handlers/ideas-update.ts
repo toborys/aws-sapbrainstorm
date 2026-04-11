@@ -19,7 +19,13 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     if (!id) return badRequest('Idea id is required');
 
     const body = JSON.parse(event.body || '{}');
-    const allowedFields = ['title', 'description', 'category', 'status', 'order', 'tags', 'effort', 'impact'];
+    const allowedFields = [
+      'name', 'tagline', 'problem', 'solution', 'architecture', 'awsServices',
+      'complexity', 'mvpTime', 'risk', 'riskNote', 'mrr', 'model',
+      'selfService', 'potential', 'category', 'categoryGroup',
+      'targetBuyer', 'customerPerspective', 'differentiator',
+      'status', 'order',
+    ];
 
     const expressionParts: string[] = [];
     const expressionNames: Record<string, string> = {};

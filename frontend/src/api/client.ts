@@ -63,21 +63,21 @@ export function deleteIdea(id: string) {
 
 export function reorderIdeas(orderedIds: string[]) {
   return request<void>('/api/ideas/reorder', {
-    method: 'POST',
+    method: 'PUT',
     body: JSON.stringify({ orderedIds }),
   })
 }
 
 // Voting
-export function submitVotes(data: { votedIdeas: string[]; customIdea?: string }) {
-  return request<VotingSession>('/api/votes', {
+export function submitVotes(data: { ideaIds: string[]; customIdea?: string }) {
+  return request<VotingSession>('/api/votes/submit', {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export function getMyVotes() {
-  return request<VotingSession>('/api/votes/me')
+  return request<VotingSession>('/api/votes/my')
 }
 
 export function getVoteResults() {
@@ -86,11 +86,11 @@ export function getVoteResults() {
 
 // Custom Ideas
 export function getCustomIdeas() {
-  return request<CustomIdea[]>('/api/custom-ideas')
+  return request<CustomIdea[]>('/api/admin/custom-ideas')
 }
 
 export function updateCustomIdea(id: string, data: Partial<CustomIdea>) {
-  return request<CustomIdea>(`/api/custom-ideas/${id}`, {
+  return request<CustomIdea>(`/api/admin/custom-ideas/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -98,33 +98,51 @@ export function updateCustomIdea(id: string, data: Partial<CustomIdea>) {
 
 // Users / Customers
 export function getCustomers() {
-  return request<UserProfile[]>('/api/customers')
+  return request<UserProfile[]>('/api/admin/customers')
 }
 
 export function inviteCustomer(data: { email: string; company: string; votingDeadline?: string }) {
-  return request<UserProfile>('/api/customers/invite', {
+  return request<UserProfile>('/api/admin/customers/invite', {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export function bulkInviteCustomers(data: Array<{ email: string; company: string; votingDeadline?: string }>) {
-  return request<UserProfile[]>('/api/customers/invite/bulk', {
+  return request<UserProfile[]>('/api/admin/customers/invite/bulk', {
     method: 'POST',
     body: JSON.stringify({ customers: data }),
   })
 }
 
 export function resendInvite(userId: string) {
-  return request<void>(`/api/customers/${userId}/resend`, {
+  return request<void>(`/api/admin/customers/${userId}/resend`, {
     method: 'POST',
   })
 }
 
 // Brainstorm
-export function brainstormIdeas(data: BrainstormRequest) {
-  return request<Partial<Idea>[]>('/api/brainstorm', {
+export function startBrainstorm(data: BrainstormRequest) {
+  return request<{ sessionId: string; status: string }>('/api/brainstorm/generate', {
     method: 'POST',
     body: JSON.stringify(data),
   })
+}
+
+export function getBrainstormStatus(sessionId: string) {
+  return request<{
+    sessionId: string;
+    status: 'generating' | 'complete' | 'error';
+    ideas?: unknown[];
+    discussion?: string;
+    agentCount?: number;
+    error?: string;
+  }>(`/api/brainstorm/status/${sessionId}`)
+}
+
+// Keep old name for backward compat
+export const brainstormIdeas = startBrainstorm
+
+export function getBrainstormHistory() {
+  return request<Array<{ key: string; lastModified: string }>>('/api/brainstorm/history')
 }

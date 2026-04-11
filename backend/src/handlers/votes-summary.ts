@@ -29,7 +29,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     const topIdeas = Array.isArray(fullResults.ideas)
       ? fullResults.ideas.slice(0, 5).map((idea: any) => ({
           ideaId: idea.ideaId,
-          title: idea.title,
+          name: idea.title,
           voteCount: idea.voteCount,
         }))
       : [];

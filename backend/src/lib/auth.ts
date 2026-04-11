@@ -3,14 +3,14 @@ import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 const customerVerifier = CognitoJwtVerifier.create({
   userPoolId: process.env.CUSTOMER_POOL_ID!,
-  tokenUse: 'access',
-  clientId: null as unknown as string, // accept any client
+  tokenUse: 'id',
+  clientId: process.env.CUSTOMER_CLIENT_ID!,
 });
 
 const teamVerifier = CognitoJwtVerifier.create({
   userPoolId: process.env.TEAM_POOL_ID!,
-  tokenUse: 'access',
-  clientId: null as unknown as string,
+  tokenUse: 'id',
+  clientId: process.env.TEAM_CLIENT_ID!,
 });
 
 export function extractToken(event: APIGatewayProxyEventV2): string | undefined {

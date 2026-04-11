@@ -44,11 +44,15 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
           const body = await getResult.Body?.transformToString();
           if (body) {
             const session = JSON.parse(body);
+            const totalIdeas = session.responses
+              ? session.responses.reduce((sum: number, r: { ideas?: unknown[] }) => sum + (r.ideas?.length ?? 0), 0)
+              : session.ideas?.length ?? 0;
             sessions.push({
               sessionId: session.sessionId,
               category: session.category,
-              prompt: session.prompt,
-              ideaCount: session.ideas?.length ?? 0,
+              categoryGroup: session.categoryGroup || 'all',
+              agentCount: session.agents?.length ?? 1,
+              ideaCount: totalIdeas,
               createdAt: session.createdAt,
             });
           }

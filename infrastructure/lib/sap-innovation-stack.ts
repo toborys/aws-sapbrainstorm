@@ -86,7 +86,7 @@ export class SapInnovationStack extends cdk.Stack {
     });
 
     const customerClient = customerPool.addClient('CustomerWebClient', {
-      authFlows: { userSrp: true },
+      authFlows: { userSrp: true, userPassword: true },
       oAuth: {
         flows: { authorizationCodeGrant: true },
         scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
@@ -127,7 +127,7 @@ export class SapInnovationStack extends cdk.Stack {
     });
 
     const teamClient = teamPool.addClient('TeamWebClient', {
-      authFlows: { userSrp: true },
+      authFlows: { userSrp: true, userPassword: true },
       oAuth: {
         flows: { authorizationCodeGrant: true },
         scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
@@ -195,7 +195,9 @@ export class SapInnovationStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_20_X,
         architecture: lambda.Architecture.ARM_64,
         handler,
-        code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/dist')),
+        code: lambda.Code.fromAsset(path.join(__dirname, '../../backend'), {
+          exclude: ['src', 'tsconfig.json', '*.ts'],
+        }),
         memorySize: opts?.memory ?? 256,
         timeout: cdk.Duration.seconds(opts?.timeout ?? 10),
         environment: lambdaEnv,
@@ -207,33 +209,54 @@ export class SapInnovationStack extends cdk.Stack {
     };
 
     // Ideas API
-    const ideasListFn = createLambda('IdeasList', 'handlers/ideas-list.handler');
-    const ideasGetFn = createLambda('IdeasGet', 'handlers/ideas-get.handler');
-    const ideasCreateFn = createLambda('IdeasCreate', 'handlers/ideas-create.handler');
-    const ideasUpdateFn = createLambda('IdeasUpdate', 'handlers/ideas-update.handler');
-    const ideasDeleteFn = createLambda('IdeasDelete', 'handlers/ideas-delete.handler');
-    const ideasReorderFn = createLambda('IdeasReorder', 'handlers/ideas-reorder.handler');
+    const ideasListFn = createLambda('IdeasList', 'dist/handlers/ideas-list.handler');
+    const ideasGetFn = createLambda('IdeasGet', 'dist/handlers/ideas-get.handler');
+    const ideasCreateFn = createLambda('IdeasCreate', 'dist/handlers/ideas-create.handler');
+    const ideasUpdateFn = createLambda('IdeasUpdate', 'dist/handlers/ideas-update.handler');
+    const ideasDeleteFn = createLambda('IdeasDelete', 'dist/handlers/ideas-delete.handler');
+    const ideasReorderFn = createLambda('IdeasReorder', 'dist/handlers/ideas-reorder.handler');
 
     // Voting API
-    const votesMyFn = createLambda('VotesMy', 'handlers/votes-my.handler');
-    const votesSubmitFn = createLambda('VotesSubmit', 'handlers/votes-submit.handler');
-    const votesResultsFn = createLambda('VotesResults', 'handlers/votes-results.handler');
-    const votesSummaryFn = createLambda('VotesSummary', 'handlers/votes-summary.handler');
+    const votesMyFn = createLambda('VotesMy', 'dist/handlers/votes-my.handler');
+    const votesSubmitFn = createLambda('VotesSubmit', 'dist/handlers/votes-submit.handler');
+    const votesResultsFn = createLambda('VotesResults', 'dist/handlers/votes-results.handler');
+    const votesSummaryFn = createLambda('VotesSummary', 'dist/handlers/votes-summary.handler');
 
     // Brainstorm API
-    const brainstormGenerateFn = createLambda('BrainstormGenerate', 'handlers/brainstorm-generate.handler', {
-      memory: 512,
-      timeout: 30,
+    // Brainstorm worker (async, invoked by generate Lambda)
+    const brainstormWorkerFn = createLambda('BrainstormWorker', 'dist/handlers/brainstorm-worker.handler', {
+      memory: 1024,
+      timeout: 300,
     });
-    anthropicSecret.grantRead(brainstormGenerateFn);
-    dataBucket.grantReadWrite(brainstormGenerateFn);
+    brainstormWorkerFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel'],
+      resources: ['*'],
+    }));
+    dataBucket.grantReadWrite(brainstormWorkerFn);
 
-    const brainstormHistoryFn = createLambda('BrainstormHistory', 'handlers/brainstorm-history.handler');
+    // Brainstorm generate (API-facing, starts async worker)
+    const brainstormGenerateFn = createLambda('BrainstormGenerate', 'dist/handlers/brainstorm-generate.handler', {
+      memory: 256,
+      timeout: 10,
+    });
+    brainstormGenerateFn.addEnvironment('WORKER_FUNCTION_NAME', brainstormWorkerFn.functionName);
+    brainstormWorkerFn.grantInvoke(brainstormGenerateFn);
+    dataBucket.grantReadWrite(brainstormGenerateFn);
+    brainstormGenerateFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['lambda:InvokeFunction'],
+      resources: [brainstormWorkerFn.functionArn],
+    }));
+
+    // Brainstorm status (polling endpoint)
+    const brainstormStatusFn = createLambda('BrainstormStatus', 'dist/handlers/brainstorm-status.handler');
+    dataBucket.grantRead(brainstormStatusFn);
+
+    const brainstormHistoryFn = createLambda('BrainstormHistory', 'dist/handlers/brainstorm-history.handler');
     dataBucket.grantRead(brainstormHistoryFn);
 
     // Admin API
-    const adminCustomersListFn = createLambda('AdminCustomersList', 'handlers/admin-customers-list.handler');
-    const adminCustomersInviteFn = createLambda('AdminCustomersInvite', 'handlers/admin-customers-invite.handler');
+    const adminCustomersListFn = createLambda('AdminCustomersList', 'dist/handlers/admin-customers-list.handler');
+    const adminCustomersInviteFn = createLambda('AdminCustomersInvite', 'dist/handlers/admin-customers-invite.handler');
     adminCustomersInviteFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['cognito-idp:AdminCreateUser', 'cognito-idp:AdminAddUserToGroup'],
       resources: [customerPool.userPoolArn],
@@ -243,23 +266,54 @@ export class SapInnovationStack extends cdk.Stack {
       resources: ['*'],
     }));
 
-    const adminCustomersUpdateFn = createLambda('AdminCustomersUpdate', 'handlers/admin-customers-update.handler');
-    const adminExportFn = createLambda('AdminExport', 'handlers/admin-export.handler');
+    const adminCustomersUpdateFn = createLambda('AdminCustomersUpdate', 'dist/handlers/admin-customers-update.handler');
+    const adminExportFn = createLambda('AdminExport', 'dist/handlers/admin-export.handler');
     dataBucket.grantWrite(adminExportFn);
 
-    const adminCustomIdeasFn = createLambda('AdminCustomIdeas', 'handlers/admin-custom-ideas.handler');
+    const adminCustomIdeasFn = createLambda('AdminCustomIdeas', 'dist/handlers/admin-custom-ideas.handler');
 
     // Scheduled Lambdas
-    const resultsAggregatorFn = createLambda('ResultsAggregator', 'handlers/results-aggregator.handler');
-    const deadlineNotifierFn = createLambda('DeadlineNotifier', 'handlers/deadline-notifier.handler');
+    const resultsAggregatorFn = createLambda('ResultsAggregator', 'dist/handlers/results-aggregator.handler');
+    const deadlineNotifierFn = createLambda('DeadlineNotifier', 'dist/handlers/deadline-notifier.handler');
     deadlineNotifierFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['ses:SendEmail'],
       resources: ['*'],
     }));
 
-    // Cognito triggers
-    const preSignupFn = createLambda('PreSignupTrigger', 'handlers/pre-signup-trigger.handler');
-    const postConfirmationFn = createLambda('PostConfirmationTrigger', 'handlers/post-confirmation-trigger.handler');
+    // Cognito triggers — separate env to avoid circular dependency with CustomerPool
+    const triggerEnv: Record<string, string> = {
+      TABLE_NAME: table.tableName,
+      STAGE: stageName,
+    };
+
+    const preSignupFn = new lambda.Function(this, 'PreSignupTrigger', {
+      functionName: `SapInnovation-PreSignupTrigger-${stageName}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.ARM_64,
+      handler: 'dist/handlers/pre-signup-trigger.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../backend'), {
+          exclude: ['src', 'tsconfig.json', '*.ts'],
+        }),
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(10),
+      environment: triggerEnv,
+      tracing: lambda.Tracing.ACTIVE,
+    });
+
+    const postConfirmationFn = new lambda.Function(this, 'PostConfirmationTrigger', {
+      functionName: `SapInnovation-PostConfirmationTrigger-${stageName}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.ARM_64,
+      handler: 'dist/handlers/post-confirmation-trigger.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../backend'), {
+          exclude: ['src', 'tsconfig.json', '*.ts'],
+        }),
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(10),
+      environment: triggerEnv,
+      tracing: lambda.Tracing.ACTIVE,
+    });
+    table.grantReadWriteData(postConfirmationFn);
 
     customerPool.addTrigger(cognito.UserPoolOperation.PRE_SIGN_UP, preSignupFn);
     customerPool.addTrigger(cognito.UserPoolOperation.POST_CONFIRMATION, postConfirmationFn);
@@ -290,18 +344,16 @@ export class SapInnovationStack extends cdk.Stack {
       jwtAudience: [teamClient.userPoolClientId],
     });
 
-    // Routes — Ideas (customer-accessible)
+    // Routes — Ideas (both customer and team — Lambda verifies token from either pool)
     httpApi.addRoutes({
       path: '/api/ideas',
       methods: [apigatewayv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration('IdeasListInt', ideasListFn),
-      authorizer: customerAuthorizer,
     });
     httpApi.addRoutes({
       path: '/api/ideas/{id}',
       methods: [apigatewayv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration('IdeasGetInt', ideasGetFn),
-      authorizer: customerAuthorizer,
     });
 
     // Routes — Ideas management (team-only)
@@ -364,6 +416,12 @@ export class SapInnovationStack extends cdk.Stack {
       authorizer: teamAuthorizer,
     });
     httpApi.addRoutes({
+      path: '/api/brainstorm/status/{sessionId}',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration('BrainstormStatusInt', brainstormStatusFn),
+      authorizer: teamAuthorizer,
+    });
+    httpApi.addRoutes({
       path: '/api/brainstorm/history',
       methods: [apigatewayv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration('BrainstormHistInt', brainstormHistoryFn),
@@ -422,7 +480,10 @@ export class SapInnovationStack extends cdk.Stack {
       },
       additionalBehaviors: {
         '/api/*': {
-          origin: new origins.HttpOrigin(`${httpApi.httpApiId}.execute-api.eu-central-1.amazonaws.com`),
+          origin: new origins.HttpOrigin(`${httpApi.httpApiId}.execute-api.eu-central-1.amazonaws.com`, {
+            readTimeout: cdk.Duration.seconds(120),
+            keepaliveTimeout: cdk.Duration.seconds(60),
+          }),
           viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
           cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
           originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,

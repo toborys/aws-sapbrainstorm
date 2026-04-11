@@ -1,12 +1,16 @@
 import { useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { PartyPopper, Mail } from 'lucide-react'
+import { PartyPopper, Mail, Calendar } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
+import { useIdeasStore } from '../../stores/ideasStore'
 
 export default function CustomerThankyou() {
+  const { ideas, selectedIds } = useIdeasStore()
+  const selectedIdeas = ideas.filter((i) => selectedIds.has(i.id))
+
   useEffect(() => {
     // Fire confetti
-    const duration = 2000
+    const duration = 2500
     const end = Date.now() + duration
 
     const frame = () => {
@@ -35,33 +39,59 @@ export default function CustomerThankyou() {
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center relative overflow-hidden">
-      {/* Background gradient */}
+      {/* Background gradients */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[200px]" />
+      <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-success/3 rounded-full blur-[150px]" />
 
       <div className="relative z-10 max-w-lg mx-auto px-4 text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-success/20 rounded-full mb-6">
-          <PartyPopper className="w-10 h-10 text-success" />
+        {/* Success icon */}
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-success/20 rounded-full mb-6 animate-scale-in">
+          <PartyPopper className="w-12 h-12 text-success" />
         </div>
 
-        <h1 className="font-display text-4xl text-text mb-4">
-          Dziekujemy!
+        <h1 className="font-display text-4xl text-text mb-4 animate-fade-in">
+          Dziekujemy za Twoj glos!
         </h1>
 
-        <p className="text-text-muted text-lg mb-8">
+        <p className="text-text-muted text-lg mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
           Twoje glosy zostaly zapisane. Dziekujemy za udzial w glosowaniu na innowacyjne rozwiazania SAP.
         </p>
 
-        <Card className="text-left">
+        {/* Summary of votes */}
+        {selectedIdeas.length > 0 && (
+          <Card className="text-left mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <h3 className="text-sm font-semibold text-text mb-3">Twoje wybory</h3>
+            <ul className="space-y-2">
+              {selectedIdeas.map((idea, i) => (
+                <li key={idea.id} className="flex items-center gap-2 text-sm">
+                  <span className="text-accent font-mono">{i + 1}.</span>
+                  <span className="text-text">{idea.name}</span>
+                  <span className="text-text-muted">- {idea.tagline}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
+        <Card className="text-left animate-fade-in" style={{ animationDelay: '0.6s' }}>
           <h3 className="text-sm font-semibold text-text mb-2">Co dalej?</h3>
           <p className="text-sm text-text-muted mb-4">
-            Wyniki glosowania zostana przedstawione na spotkaniu podsumowujacym. O wynikach poinformujemy Cie mailowo.
+            Wyniki glosowania zostana przedstawione na spotkaniu podsumowujacym.
+            Skontaktujemy sie wkrotce z informacjami o wynikach.
           </p>
 
-          <div className="flex items-center gap-2 text-sm text-accent">
-            <Mail className="w-4 h-4" />
-            <a href="mailto:kontakt@sap-innovation.pl" className="hover:underline">
-              kontakt@sap-innovation.pl
-            </a>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-accent">
+              <Mail className="w-4 h-4" />
+              <a href="mailto:kontakt@sap-innovation.pl" className="hover:underline">
+                kontakt@sap-innovation.pl
+              </a>
+            </div>
+
+            <button className="flex items-center gap-2 text-sm text-purple hover:text-purple/80 transition-colors cursor-pointer">
+              <Calendar className="w-4 h-4" />
+              <span>Umow spotkanie</span>
+            </button>
           </div>
         </Card>
       </div>

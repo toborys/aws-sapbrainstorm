@@ -2,20 +2,48 @@ import type { ReactNode, HTMLAttributes } from 'react'
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode
-  hover?: boolean
+  glow?: boolean
+  interactive?: boolean
+  gradientBorder?: boolean
   className?: string
+  padding?: 'none' | 'sm' | 'md' | 'lg'
 }
 
-export function Card({ children, hover = false, className = '', ...props }: CardProps) {
+const paddingStyles = {
+  none: '',
+  sm: 'p-4',
+  md: 'p-6',
+  lg: 'p-8',
+}
+
+export function Card({
+  children,
+  glow = false,
+  interactive = false,
+  gradientBorder = false,
+  className = '',
+  padding = 'md',
+  ...props
+}: CardProps) {
   return (
     <div
-      className={`bg-surface border border-border rounded-xl p-6 ${
-        hover
-          ? 'transition-all duration-300 hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5'
-          : ''
-      } ${className}`}
+      className={`
+        relative bg-surface/60 backdrop-blur-xl
+        border border-border rounded-2xl
+        transition-all duration-300 ease-out
+        ${paddingStyles[padding]}
+        ${interactive
+          ? 'cursor-pointer hover:border-border-hover hover:scale-[1.01] hover:shadow-xl hover:shadow-accent-glow'
+          : 'hover:border-border-hover'
+        }
+        ${glow ? 'glow-accent' : ''}
+        ${className}
+      `}
       {...props}
     >
+      {gradientBorder && (
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent rounded-t-2xl" />
+      )}
       {children}
     </div>
   )
@@ -24,10 +52,18 @@ export function Card({ children, hover = false, className = '', ...props }: Card
 interface CardHeaderProps {
   children: ReactNode
   className?: string
+  subtitle?: string
 }
 
-export function CardHeader({ children, className = '' }: CardHeaderProps) {
-  return <div className={`mb-4 ${className}`}>{children}</div>
+export function CardHeader({ children, className = '', subtitle }: CardHeaderProps) {
+  return (
+    <div className={`mb-5 ${className}`}>
+      <h3 className="text-lg font-semibold text-text tracking-tight">{children}</h3>
+      {subtitle && (
+        <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
+      )}
+    </div>
+  )
 }
 
 interface CardContentProps {

@@ -28,6 +28,7 @@ export const handler: PostConfirmationTriggerHandler = async (event: PostConfirm
       new PutCommand({
         TableName: TABLE_NAME,
         Item: userRecord,
+        ConditionExpression: 'attribute_not_exists(PK)',
       }),
     );
 
