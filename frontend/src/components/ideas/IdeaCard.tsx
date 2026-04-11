@@ -36,13 +36,13 @@ const categoryColors: Record<string, string> = {
 
 const complexityConfig: Record<string, { label: string; color: string }> = {
   low: { label: 'Niska', color: 'text-success' },
-  medium: { label: 'Srednia', color: 'text-warning' },
+  medium: { label: 'Średnia', color: 'text-warning' },
   high: { label: 'Wysoka', color: 'text-danger' },
 }
 
 const riskConfig: Record<string, { label: string; color: string }> = {
   low: { label: 'Niskie', color: 'text-success' },
-  medium: { label: 'Srednie', color: 'text-warning' },
+  medium: { label: 'Średnie', color: 'text-warning' },
   high: { label: 'Wysokie', color: 'text-danger' },
 }
 
@@ -130,7 +130,7 @@ export function IdeaCard({
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleStatus?.(idea.id) }}
                 className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-2 transition-all duration-200 cursor-pointer"
-                title={idea.status === 'active' ? 'Ukryj' : 'Pokaz'}
+                title={idea.status === 'active' ? 'Ukryj' : 'Pokaż'}
               >
                 {idea.status === 'active' ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
@@ -168,7 +168,7 @@ export function IdeaCard({
               onClick={(e) => { e.stopPropagation(); setShowMore(!showMore) }}
               className="text-[11px] text-accent/70 hover:text-accent mt-1 cursor-pointer transition-colors"
             >
-              {showMore ? 'mniej' : 'wiecej'}
+              {showMore ? 'mniej' : 'więcej'}
             </button>
           )}
         </div>
@@ -243,7 +243,7 @@ export function IdeaCard({
           <button
             onClick={onViewDetails}
             className="p-2.5 rounded-xl bg-surface-2/80 text-text-muted border border-border hover:border-border-hover hover:text-text transition-all duration-200 cursor-pointer active:scale-[0.98]"
-            title="Szczegoly"
+            title="Szczegóły"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

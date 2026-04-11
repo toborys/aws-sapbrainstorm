@@ -93,7 +93,7 @@ export function VoteProgress({
                 }
               `}
             >
-              Zloz glosy
+              Złóż głosy
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

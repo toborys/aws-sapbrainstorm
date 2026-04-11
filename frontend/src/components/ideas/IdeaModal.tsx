@@ -36,19 +36,19 @@ const categoryColors: Record<string, string> = {
 
 const complexityConfig: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' }> = {
   low: { label: 'Niska', variant: 'success' },
-  medium: { label: 'Srednia', variant: 'warning' },
+  medium: { label: 'Średnia', variant: 'warning' },
   high: { label: 'Wysoka', variant: 'danger' },
 }
 
 const riskConfig: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' }> = {
   low: { label: 'Niskie', variant: 'success' },
-  medium: { label: 'Srednie', variant: 'warning' },
+  medium: { label: 'Średnie', variant: 'warning' },
   high: { label: 'Wysokie', variant: 'danger' },
 }
 
 const potentialConfig: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' }> = {
   low: { label: 'Niski', variant: 'danger' },
-  medium: { label: 'Sredni', variant: 'warning' },
+  medium: { label: 'Średni', variant: 'warning' },
   high: { label: 'Wysoki', variant: 'success' },
 }
 
@@ -141,7 +141,7 @@ export function IdeaModal({
               {idea.category}
             </Badge>
             <Badge variant={complexity.variant} size="md">
-              {complexity.label} zlozonosc
+              {complexity.label} złożoność
             </Badge>
           </div>
 
@@ -175,7 +175,7 @@ export function IdeaModal({
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-purple" />
                 <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">
-                  Rozwiazanie
+                  Rozwiązanie
                 </h2>
               </div>
               <p className="text-sm text-text leading-relaxed">{idea.solution}</p>
@@ -234,7 +234,7 @@ export function IdeaModal({
 
               <QuickFact
                 icon={<Layers className="w-4 h-4" />}
-                label="Zlozonosc"
+                label="Złożoność"
                 value={complexity.label}
                 variant={complexity.variant}
               />
@@ -267,7 +267,7 @@ export function IdeaModal({
               />
               <QuickFact
                 icon={<Target className="w-4 h-4" />}
-                label="Potencjal"
+                label="Potencjał"
                 value={potential.label}
                 variant={potential.variant}
               />
@@ -294,7 +294,7 @@ export function IdeaModal({
                         Odznacz
                       </>
                     ) : (
-                      'Wybierz ten pomysl'
+                      'Wybierz ten pomysł'
                     )}
                   </button>
                 </div>

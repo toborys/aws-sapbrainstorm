@@ -15,7 +15,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'head-of-sales',
     name: 'Head of Sales',
-    role: 'Dyrektor sprzedazy B2B Enterprise',
+    role: 'Dyrektor sprzedaży B2B Enterprise',
     avatar: 'HS',
     color: '#10b981',
     expertise: ['Enterprise Sales', 'Channel Partners', 'Pricing Strategy', 'Sales Cycles'],
@@ -35,7 +35,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'devils-advocate',
     name: "Devil's Advocate",
-    role: 'Krytyk — szuka slabosci i ryzyk',
+    role: 'Krytyk — szuka słabości i ryzyk',
     avatar: 'DA',
     color: '#ef4444',
     expertise: ['Risk Analysis', 'Market Reality', 'Failure Modes', 'Critical Thinking'],
@@ -99,7 +99,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'sap-customer',
     name: 'Enterprise Customer',
-    role: 'Glos klienta IT mid-market / enterprise',
+    role: 'Głos klienta IT mid-market / enterprise',
     avatar: 'EC',
     color: '#34d399',
     expertise: ['IT Operations', 'Budget Constraints', 'Buying Process', 'Pain Points'],
@@ -109,7 +109,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'security-expert',
     name: 'Security & Compliance',
-    role: 'Ekspert cybersecurity i compliance',
+    role: 'Ekspert bezpieczeństwa i compliance',
     avatar: 'SC',
     color: '#f87171',
     expertise: ['Cybersecurity', 'GDPR', 'SOX', 'ISO 27001', 'Zero Trust'],

@@ -102,7 +102,7 @@ export function IdeaGrid({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj pomyslow..."
+            placeholder="Szukaj pomysłów..."
             className="w-full pl-10 pr-8 py-2.5 bg-surface-2/60 backdrop-blur-sm border border-border rounded-xl text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 transition-all duration-200"
           />
           {searchQuery && (
@@ -175,7 +175,7 @@ export function IdeaGrid({
 
         {/* Count */}
         <span className="ml-auto text-xs text-text-muted">
-          {filteredIdeas.length} z {ideas.length} pomyslow
+          {filteredIdeas.length} z {ideas.length} pomysłów
         </span>
       </div>
 
@@ -202,10 +202,10 @@ export function IdeaGrid({
             <Search className="w-7 h-7 text-text-muted" />
           </div>
           <p className="text-text-secondary text-sm mb-1">
-            Brak pomyslow w tej kategorii.
+            Brak pomysłów w tej kategorii.
           </p>
           <p className="text-text-muted text-xs">
-            Sprobuj zmienic filtr lub wyszukiwanie.
+            Spróbuj zmienić filtr lub wyszukiwanie.
           </p>
         </div>
       )}

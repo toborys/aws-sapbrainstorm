@@ -56,7 +56,7 @@ const IDEA_TYPE_OPTIONS: { value: IdeaTypeFilter; label: string }[] = [
   { value: 'all', label: 'Wszystkie' },
   { value: 'technical', label: 'Techniczne' },
   { value: 'business', label: 'Biznesowe' },
-  { value: 'sales', label: 'Sprzedazowe' },
+  { value: 'sales', label: 'Sprzedażowe' },
   { value: 'operations', label: 'Operacyjne' },
 ]
 
@@ -292,7 +292,7 @@ export default function BrainstormPanel() {
             sessionData = status
             break
           } else if (status.status === 'error') {
-            throw new Error(status.error || 'Analiza zakonczona bledem')
+            throw new Error(status.error || 'Analiza zakończona błędem')
           }
           // Still generating — continue polling
         } catch (pollErr) {
@@ -308,7 +308,7 @@ export default function BrainstormPanel() {
       }
 
       if (!sessionData) {
-        throw new Error('Timeout — analiza trwa zbyt dlugo. Sprobuj ponownie z mniejsza liczba ekspertow.')
+        throw new Error('Timeout — analiza trwa zbyt długo. Spróbuj ponownie z mniejszą liczbą ekspertów.')
       }
 
       // Normalise API response
@@ -338,7 +338,7 @@ export default function BrainstormPanel() {
         clearInterval(litInterval.current)
         litInterval.current = null
       }
-      addToast({ type: 'error', message: `Blad analizy strategicznej: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Błąd analizy strategicznej: ${(err as Error).message}` })
       setViewMode('config')
     }
   }
@@ -352,10 +352,10 @@ export default function BrainstormPanel() {
       const labels: Record<string, string> = {
         technical: 'Techniczne',
         business: 'Biznesowe',
-        sales: 'Sprzedazowe',
+        sales: 'Sprzedażowe',
         operations: 'Operacyjne',
       }
-      prompt += `Typ pomyslow: ${labels[ideaType]}\n`
+      prompt += `Typ pomysłów: ${labels[ideaType]}\n`
     }
     if (customPrompt.trim()) {
       prompt += `Dodatkowy kontekst: ${customPrompt}\n`
@@ -371,7 +371,7 @@ export default function BrainstormPanel() {
     architecture: idea.architecture || '',
     awsServices: idea.awsServices || [],
     complexity: idea.complexity || 'medium',
-    mvpTime: idea.mvpTime || '3 miesiace',
+    mvpTime: idea.mvpTime || '3 miesiące',
     risk: idea.risk || 'medium',
     riskNote: idea.riskNote || '',
     mrr: idea.mrr || '',
@@ -416,7 +416,7 @@ export default function BrainstormPanel() {
       addToast({ type: 'success', message: `Dodano "${idea.name}" do portfolio` })
       fetchIdeas()
     } catch (err) {
-      addToast({ type: 'error', message: `Blad: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Błąd: ${(err as Error).message}` })
     } finally {
       setAddingIdea(null)
     }
@@ -465,7 +465,7 @@ export default function BrainstormPanel() {
       await fetchIdeas()
       addToast({ type: 'success', message: `Dodano ${count} rekomendacji do portfolio` })
     } catch (err) {
-      addToast({ type: 'error', message: `Blad: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Błąd: ${(err as Error).message}` })
     } finally {
       setAddingAll(false)
     }
@@ -491,7 +491,7 @@ export default function BrainstormPanel() {
     lines.push('=' .repeat(60))
     lines.push(`Data: ${new Date().toLocaleString('pl-PL')}`)
     lines.push(`Kategoria: ${category}`)
-    lines.push(`Liczba ekspertow: ${brainstormResult.agentCount}`)
+    lines.push(`Liczba ekspertów: ${brainstormResult.agentCount}`)
     lines.push('')
     if (brainstormResult.discussion) {
       lines.push('SYNTEZA PANELU DORADCZEGO')
@@ -505,8 +505,8 @@ export default function BrainstormPanel() {
       lines.push(`\n${idx + 1}. ${idea.name}`)
       lines.push(`   ${idea.tagline}`)
       lines.push(`   Problem: ${idea.problem}`)
-      lines.push(`   Rozwiazanie: ${idea.solution}`)
-      lines.push(`   Zlozonosc: ${complexityLabel(idea.complexity)} | MVP: ${idea.mvpTime} | Ryzyko: ${riskLabel(idea.risk)}`)
+      lines.push(`   Rozwiązanie: ${idea.solution}`)
+      lines.push(`   Złożoność: ${complexityLabel(idea.complexity)} | MVP: ${idea.mvpTime} | Ryzyko: ${riskLabel(idea.risk)}`)
       if (idea.mrr) lines.push(`   Szacowane MRR: ${idea.mrr}`)
       if (idea.targetBuyer) lines.push(`   Docelowy nabywca: ${idea.targetBuyer}`)
       if (idea.panelNotes) lines.push(`   Notatki panelu: ${idea.panelNotes}`)
@@ -530,19 +530,19 @@ export default function BrainstormPanel() {
   }
 
   const complexityLabel = (c: string) =>
-    c === 'low' ? 'Niska' : c === 'high' ? 'Wysoka' : 'Srednia'
+    c === 'low' ? 'Niska' : c === 'high' ? 'Wysoka' : 'Średnia'
 
   const riskLabel = (r: string) =>
-    r === 'low' ? 'Niskie' : r === 'high' ? 'Wysokie' : 'Srednie'
+    r === 'low' ? 'Niskie' : r === 'high' ? 'Wysokie' : 'Średnie'
 
   const potentialLabel = (p: string) =>
-    p === 'low' ? 'Niski' : p === 'high' ? 'Wysoki' : 'Sredni'
+    p === 'low' ? 'Niski' : p === 'high' ? 'Wysoki' : 'Średni'
 
   const categoryTypeLabel = (ct: string) => {
     const map: Record<string, string> = {
       technical: 'Techniczny',
       business: 'Biznesowy',
-      sales: 'Sprzedazowy',
+      sales: 'Sprzedażowy',
       operations: 'Operacyjny',
     }
     return map[ct] || ct
@@ -576,7 +576,7 @@ export default function BrainstormPanel() {
                 <h1 className="font-display text-3xl text-text">Sesja Strategiczna</h1>
               </div>
               <p className="text-text-muted text-sm">
-                Interdyscyplinarny panel ekspertow analizuje i rekomenduje najlepsze kierunki rozwoju
+                Interdyscyplinarny panel ekspertów analizuje i rekomenduje najlepsze kierunki rozwoju
               </p>
             </div>
           </div>
@@ -655,7 +655,7 @@ export default function BrainstormPanel() {
                   label="Dodatkowy kontekst dla panelu (opcjonalny)"
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
-                  placeholder="Np. Skup sie na narzediach dla SAP HANA, uwzglednij compliance GDPR, rozwazycie synergje z istniejacymi produktami..."
+                  placeholder="Np. Skup się na narzędziach dla SAP HANA, uwzględnij compliance GDPR, rozważcie synergie z istniejącymi produktami..."
                   rows={3}
                 />
               </Card>
@@ -667,10 +667,10 @@ export default function BrainstormPanel() {
                 className="w-full py-4 rounded-xl text-white font-semibold text-lg transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-accent via-purple to-pink-500 bg-[length:200%_100%] hover:bg-[position:100%_0] shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/35 flex items-center justify-center gap-3 group"
               >
                 <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
-                Rozpocznij analize strategiczna
+                Rozpocznij analizę strategiczną
                 {selectedAgents.size < 3 && (
                   <span className="text-sm font-normal opacity-75 ml-2">
-                    (min. 3 ekspertow)
+                    (min. 3 ekspertów)
                   </span>
                 )}
               </button>
@@ -718,7 +718,7 @@ export default function BrainstormPanel() {
                               <Badge variant="info">{session.category}</Badge>
                             </div>
                             <div className="flex items-center gap-3 text-xs text-text-muted">
-                              <span>{session.agentCount} ekspertow</span>
+                              <span>{session.agentCount} ekspertów</span>
                               <span>{session.ideaCount} rekomendacji</span>
                               {expandedSession === session.id ? (
                                 <ChevronUp className="w-4 h-4" />
@@ -790,7 +790,7 @@ export default function BrainstormPanel() {
 
                 {/* Toggle all */}
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-xs text-text-muted">Wybierz minimum 3 ekspertow</p>
+                  <p className="text-xs text-text-muted">Wybierz minimum 3 ekspertów</p>
                   <button
                     onClick={toggleAll}
                     className="text-xs text-accent hover:text-accent-hover transition-colors cursor-pointer underline underline-offset-2"
@@ -909,7 +909,7 @@ export default function BrainstormPanel() {
             </div>
 
             <p className="text-text-muted text-sm text-center max-w-md">
-              Eksperci analizuja dane rynkowe, oceniaja wykonalnosc techniczna i przygotowuja{' '}
+              Eksperci analizują dane rynkowe, oceniają wykonalność techniczną i przygotowują{' '}
               <span className="text-accent font-semibold">{ideaCount}</span> rekomendacji...
             </p>
 
@@ -929,7 +929,7 @@ export default function BrainstormPanel() {
                 <div className="flex items-center gap-3 mt-1">
                   <Badge variant="accent" size="md">
                     {brainstormResult.ideas.length} rekomendacji od{' '}
-                    {brainstormResult.agentCount} ekspertow
+                    {brainstormResult.agentCount} ekspertów
                   </Badge>
                 </div>
               </div>
@@ -1016,7 +1016,7 @@ export default function BrainstormPanel() {
                             }
                             className="text-[10px] text-accent mt-0.5 cursor-pointer hover:underline"
                           >
-                            {isProblemExpanded ? 'Zwiern' : 'Rozwin'}
+                            {isProblemExpanded ? 'Zwiń' : 'Rozwiń'}
                           </button>
                         )}
                       </div>
@@ -1024,7 +1024,7 @@ export default function BrainstormPanel() {
                       {/* Solution */}
                       <div className="mb-4">
                         <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
-                          Rozwiazanie
+                          Rozwiązanie
                         </h4>
                         <p className="text-xs text-text-muted">{idea.solution}</p>
                       </div>
@@ -1053,7 +1053,7 @@ export default function BrainstormPanel() {
                         )}
                         <span className="text-[11px] px-2 py-1 rounded-lg bg-surface-2 text-text-muted flex items-center gap-1">
                           <Shield className="w-3 h-3" />
-                          Potencjal: {potentialLabel(idea.potential)}
+                          Potencjał: {potentialLabel(idea.potential)}
                         </span>
                       </div>
 
@@ -1081,7 +1081,7 @@ export default function BrainstormPanel() {
                         )}
                         {idea.challengedBy && idea.challengedBy.length > 0 && (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-danger font-medium">Zastrzezenia:</span>
+                            <span className="text-[10px] text-danger font-medium">Zastrzeżenia:</span>
                             <div className="flex -space-x-1">
                               {idea.challengedBy.map((aid) => {
                                 const ag = getAgentById(aid)
@@ -1165,7 +1165,7 @@ export default function BrainstormPanel() {
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-danger bg-danger/10 hover:bg-danger/20 transition-colors cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
-                          Odrzuc
+                          Odrzuć
                         </button>
                       </div>
                     </div>
@@ -1177,9 +1177,9 @@ export default function BrainstormPanel() {
             {/* Empty state */}
             {brainstormResult.ideas.length === 0 && (
               <div className="text-center py-12 text-text-muted">
-                <p>Wszystkie rekomendacje zostaly odrzucone lub dodane do portfolio.</p>
+                <p>Wszystkie rekomendacje zostały odrzucone lub dodane do portfolio.</p>
                 <Button variant="secondary" className="mt-4" onClick={handleNewSession}>
-                  Rozpocznij nowa sesje strategiczna
+                  Rozpocznij nową sesję strategiczną
                 </Button>
               </div>
             )}
@@ -1253,7 +1253,7 @@ export default function BrainstormPanel() {
                             <Badge variant="info">{session.category}</Badge>
                           </div>
                           <div className="flex items-center gap-3 text-xs text-text-muted">
-                            <span>{session.agentCount} ekspertow</span>
+                            <span>{session.agentCount} ekspertów</span>
                             <span>{session.ideaCount} rekomendacji</span>
                             {expandedSession === session.id ? (
                               <ChevronUp className="w-4 h-4" />

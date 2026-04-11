@@ -66,11 +66,11 @@ export default function CustomerThankyou() {
         </div>
 
         <h1 className="font-display text-4xl text-text mb-4 animate-fade-in">
-          Dziekujemy za Twoj glos!
+          Dziękujemy za Twój głos!
         </h1>
 
         <p className="text-text-muted text-lg mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          Twoje glosy zostaly zapisane. Dziekujemy za udzial w glosowaniu na innowacyjne rozwiazania SAP.
+          Twoje głosy zostały zapisane. Dziękujemy za udział w głosowaniu na innowacyjne rozwiązania SAP.
         </p>
 
         {/* Summary of votes */}
@@ -94,7 +94,7 @@ export default function CustomerThankyou() {
           <Card className="text-left mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <h3 className="text-sm font-semibold text-text mb-3">Twoje wybory</h3>
             <p className="text-sm text-text-muted">
-              Zaglosowales na {votedIdeaIds.length} pomyslow.
+              Zagłosowałeś na {votedIdeaIds.length} pomysłów.
             </p>
           </Card>
         )}
@@ -102,8 +102,8 @@ export default function CustomerThankyou() {
         <Card className="text-left animate-fade-in" style={{ animationDelay: '0.6s' }}>
           <h3 className="text-sm font-semibold text-text mb-2">Co dalej?</h3>
           <p className="text-sm text-text-muted mb-4">
-            Wyniki glosowania zostana przedstawione na spotkaniu podsumowujacym.
-            Skontaktujemy sie wkrotce z informacjami o wynikach.
+            Wyniki głosowania zostaną przedstawione na spotkaniu podsumowującym.
+            Skontaktujemy się wkrótce z informacjami o wynikach.
           </p>
 
           <div className="space-y-3">
@@ -116,7 +116,7 @@ export default function CustomerThankyou() {
 
             <button className="flex items-center gap-2 text-sm text-purple hover:text-purple/80 transition-colors cursor-pointer">
               <Calendar className="w-4 h-4" />
-              <span>Umow spotkanie</span>
+              <span>Umów spotkanie</span>
             </button>
           </div>
         </Card>

@@ -13,8 +13,8 @@ import {
 
 const navItems = [
   { to: '/team/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/team/ideas', label: 'Pomysly', icon: Lightbulb },
-  { to: '/team/brainstorm', label: 'Burza mozgow', icon: Sparkles },
+  { to: '/team/ideas', label: 'Pomysły', icon: Lightbulb },
+  { to: '/team/brainstorm', label: 'Burza mózgów', icon: Sparkles },
   { to: '/team/results', label: 'Wyniki', icon: BarChart3 },
   { to: '/team/customers', label: 'Klienci', icon: Users },
 ]

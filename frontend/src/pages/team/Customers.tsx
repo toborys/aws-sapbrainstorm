@@ -35,7 +35,7 @@ function deriveStatus(customer: UserProfile): CustomerStatus {
 const statusConfig = {
   invited: { label: 'Zaproszony', variant: 'default' as const, icon: Mail },
   active: { label: 'Aktywny', variant: 'warning' as const, icon: Clock },
-  voted: { label: 'Zaglosowal', variant: 'success' as const, icon: CheckCircle },
+  voted: { label: 'Zagłosował', variant: 'success' as const, icon: CheckCircle },
 }
 
 export default function TeamCustomers() {
@@ -78,18 +78,18 @@ export default function TeamCustomers() {
       setInviteEmail('')
       setInviteCompany('')
       setInviteDeadline('')
-      addToast({ type: 'success', message: 'Zaproszenie wyslane pomyslnie' })
+      addToast({ type: 'success', message: 'Zaproszenie wysłane pomyślnie' })
       // Refresh customer list
       await fetchCustomers()
     } catch (err) {
-      addToast({ type: 'error', message: `Blad: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Błąd: ${(err as Error).message}` })
     } finally {
       setInviting(false)
     }
   }
 
   const handleResend = (_userId: string) => {
-    addToast({ type: 'info', message: 'Ponowne wysylanie zaproszen: Coming soon' })
+    addToast({ type: 'info', message: 'Ponowne wysyłanie zaproszeń: Coming soon' })
   }
 
   const handleBulkImport = () => {
@@ -121,7 +121,7 @@ export default function TeamCustomers() {
           <div>
             <h1 className="font-display text-3xl text-text mb-2">Klienci</h1>
             <p className="text-text-muted">
-              Zarzadzaj zaproszonymi klientami i monitoruj ich aktywnosc
+              Zarządzaj zaproszonymi klientami i monitoruj ich aktywność
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -137,21 +137,21 @@ export default function TeamCustomers() {
               icon={<UserPlus className="w-4 h-4" />}
               onClick={() => setShowInviteModal(true)}
             >
-              Zapros klienta
+              Zaproś klienta
             </Button>
           </div>
         </div>
 
         {error && (
           <div className="mb-6 p-4 bg-error/10 border border-error/30 rounded-xl text-sm text-error">
-            Blad ladowania danych: {error}
+            Błąd ładowania danych: {error}
           </div>
         )}
 
         {/* Stats cards */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="glass rounded-xl p-4">
-            <p className="text-xs text-text-muted mb-1">Lacznie</p>
+            <p className="text-xs text-text-muted mb-1">Łącznie</p>
             <p className="text-2xl font-semibold text-text">{stats.total}</p>
           </div>
           <div className="glass rounded-xl p-4">
@@ -163,7 +163,7 @@ export default function TeamCustomers() {
             <p className="text-2xl font-semibold text-warning">{stats.active}</p>
           </div>
           <div className="glass rounded-xl p-4">
-            <p className="text-xs text-text-muted mb-1">Zaglosowali</p>
+            <p className="text-xs text-text-muted mb-1">Zagłosowali</p>
             <p className="text-2xl font-semibold text-success">{stats.voted}</p>
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function TeamCustomers() {
               { value: 'all' as const, label: 'Wszystkie' },
               { value: 'invited' as const, label: 'Zaproszeni' },
               { value: 'active' as const, label: 'Aktywni' },
-              { value: 'voted' as const, label: 'Zaglosowali' },
+              { value: 'voted' as const, label: 'Zagłosowali' },
             ].map((opt) => (
               <button
                 key={opt.value}
@@ -268,19 +268,19 @@ export default function TeamCustomers() {
 
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t border-border">
-                    <h4 className="text-xs font-medium text-text-muted mb-3">Szczegoly</h4>
+                    <h4 className="text-xs font-medium text-text-muted mb-3">Szczegóły</h4>
                     <div className="space-y-2 ml-2 text-sm">
                       <div className="flex items-center gap-2">
                         <span className="text-text-muted">Rola:</span>
                         <span className="text-text">{customer.role}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-text-muted">Zaglosowal:</span>
+                        <span className="text-text-muted">Zagłosował:</span>
                         <span className="text-text">{customer.hasVoted ? 'Tak' : 'Nie'}</span>
                       </div>
                       {customer.votingDeadline && (
                         <div className="flex items-center gap-2">
-                          <span className="text-text-muted">Deadline glosowania:</span>
+                          <span className="text-text-muted">Deadline głosowania:</span>
                           <span className="text-text">{customer.votingDeadline}</span>
                         </div>
                       )}
@@ -300,8 +300,8 @@ export default function TeamCustomers() {
           {filteredCustomers.length === 0 && !loading && (
             <div className="text-center py-12 text-text-muted text-sm">
               {customers.length === 0
-                ? 'Brak klientow. Zapros pierwszego klienta klikajac przycisk powyzej.'
-                : 'Brak klientow pasujacych do wyszukiwania.'}
+                ? 'Brak klientów. Zaproś pierwszego klienta klikając przycisk powyżej.'
+                : 'Brak klientów pasujących do wyszukiwania.'}
             </div>
           )}
         </div>
@@ -311,7 +311,7 @@ export default function TeamCustomers() {
       <Modal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
-        title="Zapros klienta"
+        title="Zaproś klienta"
       >
         <div className="space-y-4">
           <Input
@@ -328,7 +328,7 @@ export default function TeamCustomers() {
             onChange={(e) => setInviteCompany(e.target.value)}
           />
           <Input
-            label="Deadline glosowania"
+            label="Deadline głosowania"
             type="date"
             value={inviteDeadline}
             onChange={(e) => setInviteDeadline(e.target.value)}
@@ -342,7 +342,7 @@ export default function TeamCustomers() {
               onClick={handleInvite}
               disabled={!inviteEmail || !inviteCompany || inviting}
             >
-              {inviting ? 'Wysylanie...' : 'Wyslij zaproszenie'}
+              {inviting ? 'Wysyłanie...' : 'Wyślij zaproszenie'}
             </Button>
           </div>
         </div>
@@ -352,7 +352,7 @@ export default function TeamCustomers() {
       <Modal
         isOpen={showBulkModal}
         onClose={() => setShowBulkModal(false)}
-        title="Import zbiorczy klientow"
+        title="Import zbiorczy klientów"
       >
         <div className="space-y-4">
           <p className="text-sm text-text-muted">
@@ -361,7 +361,7 @@ export default function TeamCustomers() {
           <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/30 transition-colors">
             <Upload className="w-8 h-8 mx-auto mb-3 text-text-muted" />
             <p className="text-sm text-text-muted mb-2">
-              Przeciagnij plik CSV lub kliknij aby wybrac
+              Przeciągnij plik CSV lub kliknij aby wybrać
             </p>
             <input
               type="file"
