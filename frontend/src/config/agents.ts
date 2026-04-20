@@ -5,7 +5,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'ceo-visionary',
     name: 'CEO / Visionary',
-    role: 'Wizjoner produktowy, founder mindset',
+    role: 'Product Visionary, founder mindset',
     avatar: 'CV',
     color: '#f59e0b',
     expertise: ['Product Vision', 'Market Trends', 'Business Models', 'Startup Strategy'],
@@ -15,7 +15,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'head-of-sales',
     name: 'Head of Sales',
-    role: 'Dyrektor sprzedaży B2B Enterprise',
+    role: 'B2B Enterprise Sales Director',
     avatar: 'HS',
     color: '#10b981',
     expertise: ['Enterprise Sales', 'Channel Partners', 'Pricing Strategy', 'Sales Cycles'],
@@ -25,7 +25,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'product-strategist',
     name: 'Product Strategist',
-    role: 'Strateg produktowy SaaS / PLG',
+    role: 'SaaS Product Strategist / PLG',
     avatar: 'PS',
     color: '#ff9900',
     expertise: ['SaaS Metrics', 'Product-Led Growth', 'Pricing', 'Competitive Analysis'],
@@ -35,7 +35,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'devils-advocate',
     name: "Devil's Advocate",
-    role: 'Krytyk — szuka słabości i ryzyk',
+    role: 'Critic — identifies weaknesses and risks',
     avatar: 'DA',
     color: '#ef4444',
     expertise: ['Risk Analysis', 'Market Reality', 'Failure Modes', 'Critical Thinking'],
@@ -47,7 +47,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'sap-architect',
     name: 'SAP Architect',
-    role: 'Architekt SAP Basis / HANA / S/4HANA',
+    role: 'SAP Architect — Basis / HANA / S/4HANA',
     avatar: 'SA',
     color: '#4a9eff',
     expertise: ['SAP Basis', 'HANA', 'S/4HANA', 'SAP Integration', 'ABAP'],
@@ -57,7 +57,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'aws-architect',
     name: 'AWS Architect',
-    role: 'Solutions Architect AWS',
+    role: 'AWS Solutions Architect',
     avatar: 'AA',
     color: '#a78bfa',
     expertise: ['AWS Well-Architected', 'Serverless', 'Containers', 'Cost Optimization'],
@@ -67,7 +67,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'infra-expert',
     name: 'Infrastructure Expert',
-    role: 'Ekspert infrastruktury serwerowej',
+    role: 'Infrastructure Expert',
     avatar: 'IE',
     color: '#6366f1',
     expertise: ['On-Premise', 'Hybrid Cloud', 'Networking', 'Storage', 'DR/HA'],
@@ -77,7 +77,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'genai-aws',
     name: 'GenAI on AWS',
-    role: 'Specjalista Bedrock, SageMaker, AI na AWS',
+    role: 'Bedrock, SageMaker, AI on AWS Specialist',
     avatar: 'GA',
     color: '#06b6d4',
     expertise: ['Amazon Bedrock', 'SageMaker', 'RAG', 'AI Agents', 'Prompt Engineering'],
@@ -87,7 +87,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'ai-onprem',
     name: 'AI/ML On-Prem',
-    role: 'Ekspert AI on-premise i edge',
+    role: 'On-Premise & Edge AI Expert',
     avatar: 'AI',
     color: '#ec4899',
     expertise: ['Ollama', 'vLLM', 'GPU Inference', 'Private AI', 'Edge Computing'],
@@ -99,7 +99,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'sap-customer',
     name: 'Enterprise Customer',
-    role: 'Głos klienta IT mid-market / enterprise',
+    role: 'Mid-market / Enterprise IT Customer Voice',
     avatar: 'EC',
     color: '#34d399',
     expertise: ['IT Operations', 'Budget Constraints', 'Buying Process', 'Pain Points'],
@@ -109,7 +109,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'security-expert',
     name: 'Security & Compliance',
-    role: 'Ekspert bezpieczeństwa i compliance',
+    role: 'Security & Compliance Expert',
     avatar: 'SC',
     color: '#f87171',
     expertise: ['Cybersecurity', 'GDPR', 'SOX', 'ISO 27001', 'Zero Trust'],
@@ -119,7 +119,7 @@ export const BRAINSTORM_AGENTS: BrainstormAgent[] = [
   {
     id: 'growth-hacker',
     name: 'Growth Hacker',
-    role: 'Specjalista wzrostu i marketingu B2B',
+    role: 'B2B Growth & Marketing Specialist',
     avatar: 'GH',
     color: '#fbbf24',
     expertise: ['Growth Strategy', 'Content Marketing', 'Community', 'Developer Relations'],

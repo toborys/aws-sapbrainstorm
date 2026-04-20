@@ -118,14 +118,14 @@ export default function TeamResults() {
 
   const handleExportCSV = () => {
     const csv = [
-      'Rank,Pomysł,Kategoria,Głosy',
+      'Rank,Idea,Category,Votes',
       ...filteredResults.map((r) => `${r.rank},"${r.name}",${r.category},${r.votes}`),
     ].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'wyniki-głosowania.csv'
+    a.download = 'voting-results.csv'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -149,9 +149,9 @@ export default function TeamResults() {
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-display text-3xl text-text mb-2">Wyniki głosowania</h1>
+            <h1 className="font-display text-3xl text-text mb-2">Voting Results</h1>
             <p className="text-text-muted">
-              Podsumowanie głosów i ranking pomysłów
+              Vote summary and idea ranking
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -160,21 +160,21 @@ export default function TeamResults() {
               icon={<FileSpreadsheet className="w-4 h-4" />}
               onClick={handleExportCSV}
             >
-              Eksport CSV
+              Export CSV
             </Button>
             <Button
               variant="secondary"
               icon={<Download className="w-4 h-4" />}
               onClick={handleExportPDF}
             >
-              Eksport PDF
+              Export PDF
             </Button>
           </div>
         </div>
 
         {error && (
           <div className="mb-6 p-4 bg-error/10 border border-error/30 rounded-xl text-sm text-error">
-            Błąd ładowania danych: {error}
+            Error loading data: {error}
           </div>
         )}
 
@@ -190,7 +190,7 @@ export default function TeamResults() {
               }`}
               onClick={() => setCategoryFilter(null)}
             >
-              Wszystkie
+              All
             </button>
             {(allCategories.length > 0 ? allCategories : CATEGORIES).map((cat) => (
               <button
@@ -212,7 +212,7 @@ export default function TeamResults() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Bar chart */}
           <Card className="lg:col-span-2">
-            <h3 className="text-sm font-semibold text-text mb-4">Ranking pomysłów</h3>
+            <h3 className="text-sm font-semibold text-text mb-4">Idea Ranking</h3>
             <div className="h-80">
               {filteredResults.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -247,7 +247,7 @@ export default function TeamResults() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full text-text-muted text-sm">
-                  Brak danych do wyświetlenia
+                  No data to display
                 </div>
               )}
             </div>
@@ -255,7 +255,7 @@ export default function TeamResults() {
 
           {/* Pie chart */}
           <Card>
-            <h3 className="text-sm font-semibold text-text mb-4">Rozkład wg kategorii</h3>
+            <h3 className="text-sm font-semibold text-text mb-4">Category Distribution</h3>
             <div className="h-64">
               {pieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -285,7 +285,7 @@ export default function TeamResults() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full text-text-muted text-sm">
-                  Brak danych
+                  No data
                 </div>
               )}
             </div>
@@ -308,16 +308,16 @@ export default function TeamResults() {
 
         {/* Ranked table */}
         <Card className="mb-8">
-          <h3 className="text-sm font-semibold text-text mb-4">Tabela wyników</h3>
+          <h3 className="text-sm font-semibold text-text mb-4">Results Table</h3>
           <div className="overflow-x-auto">
             {filteredResults.length > 0 ? (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left">
                     <th className="pb-3 text-text-muted font-medium w-16">#</th>
-                    <th className="pb-3 text-text-muted font-medium">Pomysł</th>
-                    <th className="pb-3 text-text-muted font-medium">Kategoria</th>
-                    <th className="pb-3 text-text-muted font-medium text-right">Głosy</th>
+                    <th className="pb-3 text-text-muted font-medium">Idea</th>
+                    <th className="pb-3 text-text-muted font-medium">Category</th>
+                    <th className="pb-3 text-text-muted font-medium text-right">Votes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,7 +350,7 @@ export default function TeamResults() {
               </table>
             ) : (
               <div className="text-center py-12 text-text-muted text-sm">
-                Brak wyników do wyświetlenia
+                No results to display
               </div>
             )}
           </div>
@@ -359,7 +359,7 @@ export default function TeamResults() {
         {/* Custom ideas section */}
         <Card>
           <h3 className="text-sm font-semibold text-text mb-4">
-            Pomysły własne klientów ({customIdeas.length})
+            Customer Custom Ideas ({customIdeas.length})
           </h3>
           <div className="space-y-3">
             {customIdeas.length > 0 ? (
@@ -381,10 +381,10 @@ export default function TeamResults() {
                         }
                       >
                         {idea.status === 'pending'
-                          ? 'Oczekuje'
+                          ? 'Pending'
                           : idea.status === 'reviewed'
-                          ? 'Przejrzany'
-                          : 'Zaakceptowany'}
+                          ? 'Reviewed'
+                          : 'Approved'}
                       </Badge>
                     </div>
                     <span className="text-xs text-text-muted">{idea.company}</span>
@@ -394,7 +394,7 @@ export default function TeamResults() {
               ))
             ) : (
               <div className="text-center py-8 text-text-muted text-sm">
-                Brak pomysłów własnych klientów
+                No custom ideas from customers
               </div>
             )}
           </div>

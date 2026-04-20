@@ -13,10 +13,10 @@ import {
 
 const navItems = [
   { to: '/team/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/team/ideas', label: 'Pomysły', icon: Lightbulb },
-  { to: '/team/brainstorm', label: 'Burza mózgów', icon: Sparkles },
-  { to: '/team/results', label: 'Wyniki', icon: BarChart3 },
-  { to: '/team/customers', label: 'Klienci', icon: Users },
+  { to: '/team/ideas', label: 'Ideas', icon: Lightbulb },
+  { to: '/team/brainstorm', label: 'Strategy Session', icon: Sparkles },
+  { to: '/team/results', label: 'Results', icon: BarChart3 },
+  { to: '/team/customers', label: 'Customers', icon: Users },
 ]
 
 export function Sidebar() {
@@ -94,7 +94,7 @@ export function Sidebar() {
           <div className="px-3 py-2">
             <div className="flex items-center gap-2 text-text-muted mb-1">
               <HelpCircle className="w-3.5 h-3.5" />
-              <span className="text-[11px]">Pomoc</span>
+              <span className="text-[11px]">Help</span>
             </div>
             <p className="text-[10px] text-text-muted/60">
               APX Innovation Platform v0.1.0

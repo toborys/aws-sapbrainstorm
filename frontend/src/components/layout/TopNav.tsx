@@ -90,14 +90,14 @@ export function TopNav() {
                     onClick={() => setDropdownOpen(false)}
                   >
                     <Settings className="w-3.5 h-3.5" />
-                    Ustawienia
+                    Settings
                   </button>
                   <button
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-danger/80 hover:text-danger hover:bg-danger/5 transition-all duration-200 cursor-pointer"
                     onClick={handleLogout}
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    Wyloguj
+                    Sign Out
                   </button>
                 </div>
               </div>

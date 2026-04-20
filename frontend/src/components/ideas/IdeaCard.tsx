@@ -35,21 +35,21 @@ const categoryColors: Record<string, string> = {
 }
 
 const complexityConfig: Record<string, { label: string; color: string }> = {
-  low: { label: 'Niska', color: 'text-success' },
-  medium: { label: 'Średnia', color: 'text-warning' },
-  high: { label: 'Wysoka', color: 'text-danger' },
+  low: { label: 'Low', color: 'text-success' },
+  medium: { label: 'Medium', color: 'text-warning' },
+  high: { label: 'High', color: 'text-danger' },
 }
 
 const riskConfig: Record<string, { label: string; color: string }> = {
-  low: { label: 'Niskie', color: 'text-success' },
-  medium: { label: 'Średnie', color: 'text-warning' },
-  high: { label: 'Wysokie', color: 'text-danger' },
+  low: { label: 'Low', color: 'text-success' },
+  medium: { label: 'Medium', color: 'text-warning' },
+  high: { label: 'High', color: 'text-danger' },
 }
 
 const statusConfig: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' }> = {
-  active: { label: 'Aktywny', variant: 'success' },
-  hidden: { label: 'Ukryty', variant: 'warning' },
-  archived: { label: 'Zarchiwizowany', variant: 'danger' },
+  active: { label: 'Active', variant: 'success' },
+  hidden: { label: 'Hidden', variant: 'warning' },
+  archived: { label: 'Archived', variant: 'danger' },
 }
 
 export function IdeaCard({
@@ -130,14 +130,14 @@ export function IdeaCard({
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleStatus?.(idea.id) }}
                 className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-2 transition-all duration-200 cursor-pointer"
-                title={idea.status === 'active' ? 'Ukryj' : 'Pokaż'}
+                title={idea.status === 'active' ? 'Hide' : 'Show'}
               >
                 {idea.status === 'active' ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit?.(idea) }}
                 className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-2 transition-all duration-200 cursor-pointer"
-                title="Edytuj"
+                title="Edit"
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
@@ -168,7 +168,7 @@ export function IdeaCard({
               onClick={(e) => { e.stopPropagation(); setShowMore(!showMore) }}
               className="text-[11px] text-accent/70 hover:text-accent mt-1 cursor-pointer transition-colors"
             >
-              {showMore ? 'mniej' : 'więcej'}
+              {showMore ? 'less' : 'more'}
             </button>
           )}
         </div>
@@ -234,16 +234,16 @@ export function IdeaCard({
             {selected ? (
               <>
                 <Check className="w-4 h-4" />
-                Odznacz
+                Deselect
               </>
             ) : (
-              'Wybierz'
+              'Select'
             )}
           </button>
           <button
             onClick={onViewDetails}
             className="p-2.5 rounded-xl bg-surface-2/80 text-text-muted border border-border hover:border-border-hover hover:text-text transition-all duration-200 cursor-pointer active:scale-[0.98]"
-            title="Szczegóły"
+            title="Details"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

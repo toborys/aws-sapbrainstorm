@@ -72,7 +72,7 @@ export default function TeamDashboard() {
   const topIdeaId = topIdeaEntry?.[0]
   const topIdeaVotes = topIdeaEntry?.[1] ?? 0
   const topIdea = ideas.find((i) => i.id === topIdeaId)
-  const topIdeaName = topIdea?.name ?? (topIdeaId ? topIdeaId : 'Brak głosów')
+  const topIdeaName = topIdea?.name ?? (topIdeaId ? topIdeaId : 'No votes yet')
 
   // Custom ideas count
   const customIdeasCount = customIdeas.length
@@ -100,7 +100,7 @@ export default function TeamDashboard() {
     .map((c) => ({
       email: c.email,
       company: c.company,
-      action: c.hasVoted ? 'Zagłosował' : 'Zalogowany',
+      action: c.hasVoted ? 'Voted' : 'Signed in',
       date: c.lastLogin ?? '',
       color: c.hasVoted ? 'text-success' : 'text-accent',
     }))
@@ -120,28 +120,28 @@ export default function TeamDashboard() {
       <div className="p-8">
         <div className="mb-8 animate-fade-in">
           <h1 className="font-display text-3xl text-text mb-2 tracking-tight">Dashboard</h1>
-          <p className="text-text-secondary">Przegląd aktywności i statystyk platformy</p>
+          <p className="text-text-secondary">Platform activity overview and metrics</p>
         </div>
 
         {error && (
           <div className="mb-6 p-4 bg-error/10 border border-error/30 rounded-xl text-sm text-error">
-            Błąd ładowania danych: {error}
+            Error loading data: {error}
           </div>
         )}
 
         {/* Metric cards - glass morphism */}
         <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 transition-all duration-700 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          {/* Głosujących */}
+          {/* Voters */}
           <div className="glass rounded-xl p-6 relative overflow-hidden group hover:border-accent/20 transition-all duration-300">
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-accent/5 rounded-full blur-2xl group-hover:bg-accent/10 transition-colors" />
             <div className="flex items-start justify-between relative">
               <div>
-                <p className="text-sm text-text-muted mb-1">Głosujących</p>
+                <p className="text-sm text-text-muted mb-1">Voters</p>
                 <p className="text-3xl font-semibold text-text">
                   {votersCount}
                   <span className="text-lg text-text-muted">/{votersTotal}</span>
                 </p>
-                <p className="text-xs text-text-muted mt-1">{voterPercentage}% partycypacji</p>
+                <p className="text-xs text-text-muted mt-1">{voterPercentage}% participation</p>
               </div>
               <div className="relative w-14 h-14">
                 <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
@@ -163,30 +163,30 @@ export default function TeamDashboard() {
             </div>
           </div>
 
-          {/* Top pomysł */}
+          {/* Top idea */}
           <div className="glass rounded-xl p-6 relative overflow-hidden group hover:border-warning/20 transition-all duration-300">
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-warning/5 rounded-full blur-2xl group-hover:bg-warning/10 transition-colors" />
             <div className="relative">
-              <p className="text-sm text-text-muted mb-1">Top pomysł</p>
+              <p className="text-sm text-text-muted mb-1">Top Idea</p>
               <p className="text-lg font-semibold text-text leading-tight">{topIdeaName}</p>
               {topIdeaVotes > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-2xl font-semibold text-warning">{topIdeaVotes}</span>
-                  <span className="text-xs text-text-muted">głosów</span>
+                  <span className="text-xs text-text-muted">votes</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Pomysłów klientów */}
+          {/* Customer ideas */}
           <div className="glass rounded-xl p-6 relative overflow-hidden group hover:border-success/20 transition-all duration-300">
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-success/5 rounded-full blur-2xl group-hover:bg-success/10 transition-colors" />
             <div className="flex items-start justify-between relative">
               <div>
-                <p className="text-sm text-text-muted mb-1">Pomysłów klientów</p>
+                <p className="text-sm text-text-muted mb-1">Customer Ideas</p>
                 <p className="text-3xl font-semibold text-text">{customIdeasCount}</p>
                 {newCustomIdeas > 0 && (
-                  <p className="text-xs text-success mt-1">{newCustomIdeas} nowe</p>
+                  <p className="text-xs text-success mt-1">{newCustomIdeas} new</p>
                 )}
               </div>
               <div className="p-2 rounded-lg bg-success/10">
@@ -195,12 +195,12 @@ export default function TeamDashboard() {
             </div>
           </div>
 
-          {/* Czas do deadline */}
+          {/* Time to deadline */}
           <div className="glass rounded-xl p-6 relative overflow-hidden group hover:border-purple/20 transition-all duration-300">
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-purple/5 rounded-full blur-2xl group-hover:bg-purple/10 transition-colors" />
             <div className="flex items-start justify-between relative">
               <div>
-                <p className="text-sm text-text-muted mb-1">Czas do deadline</p>
+                <p className="text-sm text-text-muted mb-1">Time to deadline</p>
                 {(() => {
                   // Find the nearest future voting deadline from customers
                   const now = new Date()
@@ -215,11 +215,11 @@ export default function TeamDashboard() {
                     return (
                       <>
                         <p className="text-3xl font-semibold text-text">{daysLeft}</p>
-                        <p className="text-xs text-text-muted mt-1">dni pozostało</p>
+                        <p className="text-xs text-text-muted mt-1">days left</p>
                       </>
                     )
                   }
-                  return <p className="text-lg font-semibold text-text-muted mt-1">Brak deadline</p>
+                  return <p className="text-lg font-semibold text-text-muted mt-1">No deadline</p>
                 })()}
               </div>
               <div className="p-2 rounded-lg bg-purple/10">
@@ -232,9 +232,9 @@ export default function TeamDashboard() {
         {/* Chart */}
         <Card className={`mb-8 transition-all duration-700 delay-200 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-text">Ranking pomysłów wg głosów</h3>
+            <h3 className="text-sm font-semibold text-text">Idea Ranking by Votes</h3>
             <Button variant="ghost" size="sm" onClick={() => navigate('/team/results')}>
-              Pełne wyniki
+              Full Results
               <ArrowRight className="w-3.5 h-3.5 ml-1" />
             </Button>
           </div>
@@ -272,7 +272,7 @@ export default function TeamDashboard() {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-text-muted text-sm">
-                Brak danych do wyświetlenia
+                No data to display
               </div>
             )}
           </div>
@@ -281,7 +281,7 @@ export default function TeamDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Activity feed */}
           <Card className={`lg:col-span-2 transition-all duration-700 delay-300 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <h3 className="text-sm font-semibold text-text mb-4">Ostatnia aktywność</h3>
+            <h3 className="text-sm font-semibold text-text mb-4">Recent Activity</h3>
             <div className="space-y-3">
               {recentActivity.length > 0 ? (
                 recentActivity.map((activity, idx) => (
@@ -304,7 +304,7 @@ export default function TeamDashboard() {
                 ))
               ) : (
                 <div className="text-center py-8 text-text-muted text-sm">
-                  Brak aktywności
+                  No activity
                 </div>
               )}
             </div>
@@ -312,7 +312,7 @@ export default function TeamDashboard() {
 
           {/* Quick actions */}
           <Card className={`transition-all duration-700 delay-400 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <h3 className="text-sm font-semibold text-text mb-4">Szybkie akcje</h3>
+            <h3 className="text-sm font-semibold text-text mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <button
                 onClick={() => navigate('/team/customers')}
@@ -322,8 +322,8 @@ export default function TeamDashboard() {
                   <Users className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-text">Zaproś klienta</p>
-                  <p className="text-xs text-text-muted">Dodaj nowego uczestnika</p>
+                  <p className="text-sm font-medium text-text">Invite Customer</p>
+                  <p className="text-xs text-text-muted">Add a new participant</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
               </button>
@@ -336,8 +336,8 @@ export default function TeamDashboard() {
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-text">Generuj pomysły AI</p>
-                  <p className="text-xs text-text-muted">Burza mózgów z agentami</p>
+                  <p className="text-sm font-medium text-text">Generate AI Ideas</p>
+                  <p className="text-xs text-text-muted">Brainstorm with expert agents</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-purple transition-colors" />
               </button>
@@ -350,8 +350,8 @@ export default function TeamDashboard() {
                   <FileSpreadsheet className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-text">Eksport wyników</p>
-                  <p className="text-xs text-text-muted">CSV lub PDF</p>
+                  <p className="text-sm font-medium text-text">Export Results</p>
+                  <p className="text-xs text-text-muted">CSV or PDF</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-success transition-colors" />
               </button>

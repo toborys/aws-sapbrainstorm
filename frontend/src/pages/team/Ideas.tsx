@@ -102,9 +102,9 @@ const categoryBadgeVariant: Record<string, 'success' | 'warning' | 'danger' | 'i
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  active: 'Aktywny',
-  hidden: 'Ukryty',
-  archived: 'Zarchiwizowany',
+  active: 'Active',
+  hidden: 'Hidden',
+  archived: 'Archived',
 }
 
 function SortableIdea({
@@ -160,7 +160,7 @@ function SortableIdea({
         )}
         {idea.complexity && (
           <span className="text-xs px-2 py-0.5 rounded bg-surface-2 text-text-muted hidden sm:inline">
-            {idea.complexity === 'low' ? 'Niska' : idea.complexity === 'high' ? 'Wysoka' : 'Średnia'}
+            {idea.complexity === 'low' ? 'Low' : idea.complexity === 'high' ? 'High' : 'Medium'}
           </span>
         )}
       </div>
@@ -169,7 +169,7 @@ function SortableIdea({
         <button
           onClick={() => onToggleStatus(idea.id)}
           className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
-          title={idea.status === 'active' ? 'Ukryj' : 'Pokaż'}
+          title={idea.status === 'active' ? 'Hide' : 'Show'}
         >
           {idea.status === 'active' ? (
             <EyeOff className="w-4 h-4" />
@@ -180,14 +180,14 @@ function SortableIdea({
         <button
           onClick={() => onEdit(idea)}
           className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
-          title="Edytuj"
+          title="Edit"
         >
           <Pencil className="w-4 h-4" />
         </button>
         <button
           onClick={() => onArchive(idea.id)}
           className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-surface-2 transition-colors cursor-pointer"
-          title="Archiwizuj"
+          title="Archive"
         >
           <Archive className="w-4 h-4" />
         </button>
@@ -254,7 +254,7 @@ function IdeaGridCard({
       <div className="flex flex-wrap gap-2">
         {idea.complexity && (
           <span className="text-xs px-2 py-1 rounded bg-surface-2 text-text-muted">
-            {idea.complexity === 'low' ? 'Niska' : idea.complexity === 'high' ? 'Wysoka' : 'Średnia'}
+            {idea.complexity === 'low' ? 'Low' : idea.complexity === 'high' ? 'High' : 'Medium'}
           </span>
         )}
         {idea.mvpTime && (
@@ -336,7 +336,7 @@ export default function TeamIdeas() {
     try {
       await reorderIdeas(reordered.map((i) => i.id))
     } catch (err) {
-      addToast({ type: 'error', message: `Błąd zmiany kolejności: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Reorder failed: ${(err as Error).message}` })
       fetchIdeas()
     }
   }
@@ -353,10 +353,10 @@ export default function TeamIdeas() {
 
     try {
       await updateIdea(id, { status: newStatus as Idea['status'] })
-      addToast({ type: 'success', message: newStatus === 'hidden' ? 'Pomysł ukryty' : 'Pomysł widoczny' })
+      addToast({ type: 'success', message: newStatus === 'hidden' ? 'Idea hidden' : 'Idea visible' })
       fetchIdeas()
     } catch (err) {
-      addToast({ type: 'error', message: `Błąd: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
       fetchIdeas()
     }
   }
@@ -369,10 +369,10 @@ export default function TeamIdeas() {
 
     try {
       await updateIdea(id, { status: 'archived' })
-      addToast({ type: 'success', message: 'Pomysł zarchiwizowany' })
+      addToast({ type: 'success', message: 'Idea archived' })
       fetchIdeas()
     } catch (err) {
-      addToast({ type: 'error', message: `Błąd: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
       fetchIdeas()
     }
   }
@@ -389,7 +389,7 @@ export default function TeamIdeas() {
         status: 'active',
         order: ideas.length + 1,
       })
-      addToast({ type: 'success', message: `Dodano "${newName}"` })
+      addToast({ type: 'success', message: `Added "${newName}"` })
       setShowAddModal(false)
       setNewName('')
       setNewTagline('')
@@ -397,7 +397,7 @@ export default function TeamIdeas() {
       setNewSolution('')
       fetchIdeas()
     } catch (err) {
-      addToast({ type: 'error', message: `Błąd: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
     } finally {
       setSaving(false)
     }
@@ -408,11 +408,11 @@ export default function TeamIdeas() {
     setSaving(true)
     try {
       await updateIdea(editingIdea.id, editingIdea)
-      addToast({ type: 'success', message: `Zapisano "${editingIdea.name}"` })
+      addToast({ type: 'success', message: `Saved "${editingIdea.name}"` })
       setEditingIdea(null)
       fetchIdeas()
     } catch (err) {
-      addToast({ type: 'error', message: `Błąd: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
     } finally {
       setSaving(false)
     }
@@ -423,9 +423,9 @@ export default function TeamIdeas() {
       <div className="p-8">
         <div className="flex items-center justify-between mb-8 animate-fade-in">
           <div>
-            <h1 className="font-display text-3xl text-text mb-2 tracking-tight">Pomysły</h1>
+            <h1 className="font-display text-3xl text-text mb-2 tracking-tight">Ideas</h1>
             <p className="text-text-secondary">
-              Zarządzaj listą pomysłów, zmieniaj kolejność i widoczność
+              Manage idea list, reorder and toggle visibility
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -434,14 +434,14 @@ export default function TeamIdeas() {
               icon={<Sparkles className="w-4 h-4" />}
               onClick={() => navigate('/team/brainstorm')}
             >
-              Burza mózgów AI
+              AI Brainstorm
             </Button>
             <Button
               variant="primary"
               icon={<Plus className="w-4 h-4" />}
               onClick={() => setShowAddModal(true)}
             >
-              Dodaj ręcznie
+              Add Manually
             </Button>
           </div>
         </div>
@@ -452,7 +452,7 @@ export default function TeamIdeas() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
               type="text"
-              placeholder="Szukaj pomysłów..."
+              placeholder="Search ideas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-surface-2/60 backdrop-blur-sm border border-border rounded-xl text-text text-sm placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 transition-all duration-200"
@@ -469,7 +469,7 @@ export default function TeamIdeas() {
               }`}
               onClick={() => setCategoryFilter(null)}
             >
-              Wszystkie
+              All
             </button>
             {CATEGORIES.map((cat) => (
               <button
@@ -536,7 +536,7 @@ export default function TeamIdeas() {
             {filtered.length === 0 && (
               <div className="text-center py-12 text-text-muted">
                 <Lightbulb className="w-8 h-8 mx-auto mb-3 opacity-50" />
-                <p>Brak pomysłów pasujących do filtrów.</p>
+                <p>No ideas match your filters.</p>
               </div>
             )}
           </Card>
@@ -554,7 +554,7 @@ export default function TeamIdeas() {
             {filtered.length === 0 && (
               <div className="col-span-3 text-center py-12 text-text-muted">
                 <Lightbulb className="w-8 h-8 mx-auto mb-3 opacity-50" />
-                <p>Brak pomysłów pasujących do filtrów.</p>
+                <p>No ideas match your filters.</p>
               </div>
             )}
           </div>
@@ -565,13 +565,13 @@ export default function TeamIdeas() {
       <Modal
         isOpen={!!editingIdea}
         onClose={() => setEditingIdea(null)}
-        title="Edytuj pomysł"
+        title="Edit Idea"
         size="lg"
       >
         {editingIdea && (
           <div className="space-y-4">
             <Input
-              label="Nazwa"
+              label="Name"
               value={editingIdea.name}
               onChange={(e) => setEditingIdea({ ...editingIdea, name: e.target.value })}
             />
@@ -586,19 +586,19 @@ export default function TeamIdeas() {
               onChange={(e) => setEditingIdea({ ...editingIdea, problem: e.target.value })}
             />
             <Textarea
-              label="Rozwiązanie"
+              label="Solution"
               value={editingIdea.solution}
               onChange={(e) => setEditingIdea({ ...editingIdea, solution: e.target.value })}
             />
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="secondary" onClick={() => setEditingIdea(null)}>
-                Anuluj
+                Cancel
               </Button>
               <Button
                 variant="primary"
                 onClick={handleSaveEdit}
               >
-                Zapisz
+                Save
               </Button>
             </div>
           </div>
@@ -609,24 +609,24 @@ export default function TeamIdeas() {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="Nowy pomysł"
+        title="New Idea"
         size="lg"
       >
         <div className="space-y-4">
           <Input
-            label="Nazwa"
+            label="Name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Nazwa pomysłu..."
+            placeholder="Idea name..."
           />
           <Input
             label="Tagline"
             value={newTagline}
             onChange={(e) => setNewTagline(e.target.value)}
-            placeholder="Krótki opis..."
+            placeholder="Short description..."
           />
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">Kategoria</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">Category</label>
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value as IdeaCategory)}
@@ -643,20 +643,20 @@ export default function TeamIdeas() {
             label="Problem"
             value={newProblem}
             onChange={(e) => setNewProblem(e.target.value)}
-            placeholder="Jaki problem rozwiązuje..."
+            placeholder="What problem does it solve..."
           />
           <Textarea
-            label="Rozwiązanie"
+            label="Solution"
             value={newSolution}
             onChange={(e) => setNewSolution(e.target.value)}
-            placeholder="Opis rozwiązania..."
+            placeholder="Solution description..."
           />
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-              Anuluj
+              Cancel
             </Button>
             <Button variant="primary" onClick={handleAddIdea} disabled={!newName}>
-              Dodaj
+              Add
             </Button>
           </div>
         </div>

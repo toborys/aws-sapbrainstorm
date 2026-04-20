@@ -35,21 +35,21 @@ const categoryColors: Record<string, string> = {
 }
 
 const complexityConfig: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' }> = {
-  low: { label: 'Niska', variant: 'success' },
-  medium: { label: 'Średnia', variant: 'warning' },
-  high: { label: 'Wysoka', variant: 'danger' },
+  low: { label: 'Low', variant: 'success' },
+  medium: { label: 'Medium', variant: 'warning' },
+  high: { label: 'High', variant: 'danger' },
 }
 
 const riskConfig: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' }> = {
-  low: { label: 'Niskie', variant: 'success' },
-  medium: { label: 'Średnie', variant: 'warning' },
-  high: { label: 'Wysokie', variant: 'danger' },
+  low: { label: 'Low', variant: 'success' },
+  medium: { label: 'Medium', variant: 'warning' },
+  high: { label: 'High', variant: 'danger' },
 }
 
 const potentialConfig: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' }> = {
-  low: { label: 'Niski', variant: 'danger' },
-  medium: { label: 'Średni', variant: 'warning' },
-  high: { label: 'Wysoki', variant: 'success' },
+  low: { label: 'Low', variant: 'danger' },
+  medium: { label: 'Medium', variant: 'warning' },
+  high: { label: 'High', variant: 'success' },
 }
 
 function extractAwsServices(text: string): string[] {
@@ -141,7 +141,7 @@ export function IdeaModal({
               {idea.category}
             </Badge>
             <Badge variant={complexity.variant} size="md">
-              {complexity.label} złożoność
+              {complexity.label} complexity
             </Badge>
           </div>
 
@@ -175,7 +175,7 @@ export function IdeaModal({
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-purple" />
                 <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">
-                  Rozwiązanie
+                  Solution
                 </h2>
               </div>
               <p className="text-sm text-text leading-relaxed">{idea.solution}</p>
@@ -187,7 +187,7 @@ export function IdeaModal({
                 <div className="flex items-center gap-2 mb-3">
                   <Server className="w-4 h-4 text-orange" />
                   <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">
-                    Architektura AWS
+                    AWS Architecture
                   </h2>
                 </div>
                 {awsServices.length > 0 && (
@@ -212,7 +212,7 @@ export function IdeaModal({
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle className="w-4 h-4 text-warning" />
                   <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">
-                    Ryzyko
+                    Risk
                   </h2>
                   <Badge variant={risk.variant} size="sm">
                     {risk.label}
@@ -229,29 +229,29 @@ export function IdeaModal({
           <div className="space-y-4">
             <div className="sticky top-4 space-y-3">
               <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">
-                Podsumowanie
+                Summary
               </h3>
 
               <QuickFact
                 icon={<Layers className="w-4 h-4" />}
-                label="Złożoność"
+                label="Complexity"
                 value={complexity.label}
                 variant={complexity.variant}
               />
               <QuickFact
                 icon={<Clock className="w-4 h-4" />}
-                label="Czas MVP"
+                label="MVP Time"
                 value={idea.mvpTime}
               />
               <QuickFact
                 icon={<AlertTriangle className="w-4 h-4" />}
-                label="Ryzyko"
+                label="Risk"
                 value={risk.label}
                 variant={risk.variant}
               />
               <QuickFact
                 icon={<TrendingUp className="w-4 h-4" />}
-                label="Szacowany MRR"
+                label="Estimated MRR"
                 value={idea.mrr}
                 highlight
               />
@@ -263,11 +263,11 @@ export function IdeaModal({
               <QuickFact
                 icon={<Shield className="w-4 h-4" />}
                 label="Self-service"
-                value={idea.selfService ? 'Tak' : 'Nie'}
+                value={idea.selfService ? 'Yes' : 'No'}
               />
               <QuickFact
                 icon={<Target className="w-4 h-4" />}
-                label="Potencjał"
+                label="Potential"
                 value={potential.label}
                 variant={potential.variant}
               />
@@ -291,10 +291,10 @@ export function IdeaModal({
                     {isSelected ? (
                       <>
                         <Check className="w-4 h-4" />
-                        Odznacz
+                        Deselect
                       </>
                     ) : (
-                      'Wybierz ten pomysł'
+                      'Select this idea'
                     )}
                   </button>
                 </div>

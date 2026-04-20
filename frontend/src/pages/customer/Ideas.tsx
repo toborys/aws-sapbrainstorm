@@ -59,11 +59,11 @@ export default function CustomerIdeas() {
         {/* Header */}
         <div className="mb-8 animate-fade-in">
           <h1 className="font-display text-3xl text-text mb-2">
-            Wybierz najlepsze pomysły
+            Select the best ideas
           </h1>
           <p className="text-text-muted">
-            Przeglądaj innowacyjne rozwiązania SAP na AWS i wybierz do {MAX_SELECTIONS} pomysłów,
-            które Twoim zdaniem mają największy potencjał.
+            Browse innovative SAP on AWS solutions and select up to {MAX_SELECTIONS} ideas
+            you believe have the greatest potential.
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export default function CustomerIdeas() {
             ))}
           </div>
           <span className="text-sm text-text-muted">
-            Wybrano {selectedIds.length} z {MAX_SELECTIONS} pomysłów
+            Selected {selectedIds.length} of {MAX_SELECTIONS} ideas
           </span>
         </div>
 
@@ -88,7 +88,7 @@ export default function CustomerIdeas() {
         {loading ? (
           <div className="text-center py-20">
             <div className="inline-block w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-            <p className="mt-4 text-text-muted">Ładowanie pomysłów...</p>
+            <p className="mt-4 text-text-muted">Loading ideas...</p>
           </div>
         ) : (
           <IdeaGrid

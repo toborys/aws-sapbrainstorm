@@ -33,9 +33,9 @@ function deriveStatus(customer: UserProfile): CustomerStatus {
 }
 
 const statusConfig = {
-  invited: { label: 'Zaproszony', variant: 'default' as const, icon: Mail },
-  active: { label: 'Aktywny', variant: 'warning' as const, icon: Clock },
-  voted: { label: 'Zagłosował', variant: 'success' as const, icon: CheckCircle },
+  invited: { label: 'Invited', variant: 'default' as const, icon: Mail },
+  active: { label: 'Active', variant: 'warning' as const, icon: Clock },
+  voted: { label: 'Voted', variant: 'success' as const, icon: CheckCircle },
 }
 
 export default function TeamCustomers() {
@@ -78,23 +78,23 @@ export default function TeamCustomers() {
       setInviteEmail('')
       setInviteCompany('')
       setInviteDeadline('')
-      addToast({ type: 'success', message: 'Zaproszenie wysłane pomyślnie' })
+      addToast({ type: 'success', message: 'Invitation sent successfully' })
       // Refresh customer list
       await fetchCustomers()
     } catch (err) {
-      addToast({ type: 'error', message: `Błąd: ${(err as Error).message}` })
+      addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
     } finally {
       setInviting(false)
     }
   }
 
   const handleResend = (_userId: string) => {
-    addToast({ type: 'info', message: 'Ponowne wysyłanie zaproszeń: Coming soon' })
+    addToast({ type: 'info', message: 'Resend invitations: Coming soon' })
   }
 
   const handleBulkImport = () => {
     setShowBulkModal(false)
-    addToast({ type: 'info', message: 'Import zbiorczy: Coming soon' })
+    addToast({ type: 'info', message: 'Bulk import: Coming soon' })
   }
 
   const stats = {
@@ -119,9 +119,9 @@ export default function TeamCustomers() {
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-display text-3xl text-text mb-2">Klienci</h1>
+            <h1 className="font-display text-3xl text-text mb-2">Customers</h1>
             <p className="text-text-muted">
-              Zarządzaj zaproszonymi klientami i monitoruj ich aktywność
+              Manage invited customers and monitor their activity
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -130,40 +130,40 @@ export default function TeamCustomers() {
               icon={<Upload className="w-4 h-4" />}
               onClick={() => setShowBulkModal(true)}
             >
-              Import zbiorczy
+              Bulk Import
             </Button>
             <Button
               variant="primary"
               icon={<UserPlus className="w-4 h-4" />}
               onClick={() => setShowInviteModal(true)}
             >
-              Zaproś klienta
+              Invite Customer
             </Button>
           </div>
         </div>
 
         {error && (
           <div className="mb-6 p-4 bg-error/10 border border-error/30 rounded-xl text-sm text-error">
-            Błąd ładowania danych: {error}
+            Error loading data: {error}
           </div>
         )}
 
         {/* Stats cards */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="glass rounded-xl p-4">
-            <p className="text-xs text-text-muted mb-1">Łącznie</p>
+            <p className="text-xs text-text-muted mb-1">Total</p>
             <p className="text-2xl font-semibold text-text">{stats.total}</p>
           </div>
           <div className="glass rounded-xl p-4">
-            <p className="text-xs text-text-muted mb-1">Zaproszeni</p>
+            <p className="text-xs text-text-muted mb-1">Invited</p>
             <p className="text-2xl font-semibold text-text-muted">{stats.invited}</p>
           </div>
           <div className="glass rounded-xl p-4">
-            <p className="text-xs text-text-muted mb-1">Aktywni</p>
+            <p className="text-xs text-text-muted mb-1">Active</p>
             <p className="text-2xl font-semibold text-warning">{stats.active}</p>
           </div>
           <div className="glass rounded-xl p-4">
-            <p className="text-xs text-text-muted mb-1">Zagłosowali</p>
+            <p className="text-xs text-text-muted mb-1">Voted</p>
             <p className="text-2xl font-semibold text-success">{stats.voted}</p>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function TeamCustomers() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
               type="text"
-              placeholder="Szukaj po emailu lub firmie..."
+              placeholder="Search by email or company..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-surface-2 border border-border rounded-lg text-text text-sm placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
@@ -182,10 +182,10 @@ export default function TeamCustomers() {
           </div>
           <div className="flex gap-1.5">
             {[
-              { value: 'all' as const, label: 'Wszystkie' },
-              { value: 'invited' as const, label: 'Zaproszeni' },
-              { value: 'active' as const, label: 'Aktywni' },
-              { value: 'voted' as const, label: 'Zagłosowali' },
+              { value: 'all' as const, label: 'All' },
+              { value: 'invited' as const, label: 'Invited' },
+              { value: 'active' as const, label: 'Active' },
+              { value: 'voted' as const, label: 'Voted' },
             ].map((opt) => (
               <button
                 key={opt.value}
@@ -228,11 +228,11 @@ export default function TeamCustomers() {
 
                   <div className="hidden md:flex items-center gap-6 text-xs text-text-muted shrink-0">
                     <div>
-                      <p className="text-text-muted/50">Zaproszony</p>
+                      <p className="text-text-muted/50">Invited</p>
                       <p>{customer.invitedAt}</p>
                     </div>
                     <div>
-                      <p className="text-text-muted/50">Ostatnie logowanie</p>
+                      <p className="text-text-muted/50">Last login</p>
                       <p>{customer.lastLogin || '-'}</p>
                     </div>
                     <div>
@@ -248,7 +248,7 @@ export default function TeamCustomers() {
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-accent hover:bg-accent/10 transition-colors cursor-pointer"
                       >
                         <RotateCw className="w-3.5 h-3.5" />
-                        Przypomnij
+                        Remind
                       </button>
                     )}
                     <button
@@ -268,25 +268,25 @@ export default function TeamCustomers() {
 
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t border-border">
-                    <h4 className="text-xs font-medium text-text-muted mb-3">Szczegóły</h4>
+                    <h4 className="text-xs font-medium text-text-muted mb-3">Details</h4>
                     <div className="space-y-2 ml-2 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="text-text-muted">Rola:</span>
+                        <span className="text-text-muted">Role:</span>
                         <span className="text-text">{customer.role}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-text-muted">Zagłosował:</span>
-                        <span className="text-text">{customer.hasVoted ? 'Tak' : 'Nie'}</span>
+                        <span className="text-text-muted">Voted:</span>
+                        <span className="text-text">{customer.hasVoted ? 'Yes' : 'No'}</span>
                       </div>
                       {customer.votingDeadline && (
                         <div className="flex items-center gap-2">
-                          <span className="text-text-muted">Deadline głosowania:</span>
+                          <span className="text-text-muted">Voting deadline:</span>
                           <span className="text-text">{customer.votingDeadline}</span>
                         </div>
                       )}
                       {customer.invitedAt && (
                         <div className="flex items-center gap-2">
-                          <span className="text-text-muted">Data zaproszenia:</span>
+                          <span className="text-text-muted">Invitation date:</span>
                           <span className="text-text">{customer.invitedAt}</span>
                         </div>
                       )}
@@ -300,8 +300,8 @@ export default function TeamCustomers() {
           {filteredCustomers.length === 0 && !loading && (
             <div className="text-center py-12 text-text-muted text-sm">
               {customers.length === 0
-                ? 'Brak klientów. Zaproś pierwszego klienta klikając przycisk powyżej.'
-                : 'Brak klientów pasujących do wyszukiwania.'}
+                ? 'No customers yet. Invite your first customer by clicking the button above.'
+                : 'No customers match your search.'}
             </div>
           )}
         </div>
@@ -311,38 +311,38 @@ export default function TeamCustomers() {
       <Modal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
-        title="Zaproś klienta"
+        title="Invite Customer"
       >
         <div className="space-y-4">
           <Input
             label="Email"
             type="email"
-            placeholder="klient@firma.pl"
+            placeholder="customer@company.com"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
           />
           <Input
-            label="Firma"
-            placeholder="Nazwa firmy"
+            label="Company"
+            placeholder="Company name"
             value={inviteCompany}
             onChange={(e) => setInviteCompany(e.target.value)}
           />
           <Input
-            label="Deadline głosowania"
+            label="Voting deadline"
             type="date"
             value={inviteDeadline}
             onChange={(e) => setInviteDeadline(e.target.value)}
           />
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="secondary" onClick={() => setShowInviteModal(false)}>
-              Anuluj
+              Cancel
             </Button>
             <Button
               variant="primary"
               onClick={handleInvite}
               disabled={!inviteEmail || !inviteCompany || inviting}
             >
-              {inviting ? 'Wysyłanie...' : 'Wyślij zaproszenie'}
+              {inviting ? 'Sending...' : 'Send Invitation'}
             </Button>
           </div>
         </div>
@@ -352,16 +352,16 @@ export default function TeamCustomers() {
       <Modal
         isOpen={showBulkModal}
         onClose={() => setShowBulkModal(false)}
-        title="Import zbiorczy klientów"
+        title="Bulk Customer Import"
       >
         <div className="space-y-4">
           <p className="text-sm text-text-muted">
-            Przygotuj plik CSV z kolumnami: email, firma, deadline (YYYY-MM-DD).
+            Prepare a CSV file with columns: email, company, deadline (YYYY-MM-DD).
           </p>
           <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/30 transition-colors">
             <Upload className="w-8 h-8 mx-auto mb-3 text-text-muted" />
             <p className="text-sm text-text-muted mb-2">
-              Przeciągnij plik CSV lub kliknij aby wybrać
+              Drag a CSV file or click to select
             </p>
             <input
               type="file"
@@ -374,16 +374,16 @@ export default function TeamCustomers() {
             />
             <label htmlFor="csv-upload">
               <Button variant="secondary" size="sm" onClick={() => document.getElementById('csv-upload')?.click()}>
-                Wybierz plik
+                Choose file
               </Button>
             </label>
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="secondary" onClick={() => setShowBulkModal(false)}>
-              Anuluj
+              Cancel
             </Button>
             <Button variant="primary" onClick={handleBulkImport}>
-              Importuj
+              Import
             </Button>
           </div>
         </div>

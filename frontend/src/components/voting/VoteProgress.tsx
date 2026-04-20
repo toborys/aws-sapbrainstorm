@@ -52,7 +52,7 @@ export function VoteProgress({
             {/* Text */}
             <div className="flex-1">
               <p className="text-sm font-medium text-text">
-                {selected} z {max} wybranych
+                {selected} of {max} selected
               </p>
 
               {/* Selected names pills */}
@@ -93,7 +93,7 @@ export function VoteProgress({
                 }
               `}
             >
-              Złóż głosy
+              Submit Votes
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

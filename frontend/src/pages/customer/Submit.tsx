@@ -49,7 +49,7 @@ export default function CustomerSubmit() {
       }
       navigate('/vote/thankyou')
     } else {
-      addToast({ type: 'error', message: 'Błąd podczas wysyłania głosów. Spróbuj ponownie.' })
+      addToast({ type: 'error', message: 'Error submitting votes. Please try again.' })
     }
   }
 
@@ -74,15 +74,15 @@ export default function CustomerSubmit() {
           onClick={() => navigate('/vote/ideas')}
           icon={<ArrowLeft className="w-4 h-4" />}
         >
-          Powrót do pomysłów
+          Back to ideas
         </Button>
 
         <div className="animate-fade-in">
           <h1 className="font-display text-3xl text-text mb-2">
-            Potwierdź swój wybór
+            Confirm Your Selection
           </h1>
           <p className="text-text-muted mb-8">
-            Sprawdź swoje wybory i opcjonalnie dodaj własny pomysł.
+            Review selected ideas and optionally add your own.
           </p>
         </div>
 
@@ -90,7 +90,7 @@ export default function CustomerSubmit() {
           {/* Selected ideas summary - removable mini-cards */}
           <Card>
             <h3 className="text-sm font-semibold text-text mb-3">
-              Twoje wybrane pomysły ({selectedIdeas.length})
+              Your selected ideas ({selectedIdeas.length})
             </h3>
             <div className="space-y-2">
               {selectedIdeas.map((idea, i) => (
@@ -109,7 +109,7 @@ export default function CustomerSubmit() {
                   <button
                     onClick={() => toggleSelect(idea.id)}
                     className="p-1 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                    title="Usuń"
+                    title="Remove"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -118,12 +118,12 @@ export default function CustomerSubmit() {
 
               {selectedIdeas.length === 0 && (
                 <p className="text-sm text-text-muted text-center py-4">
-                  Nie wybrano żadnych pomysłów.{' '}
+                  No ideas selected.{' '}
                   <button
                     onClick={() => navigate('/vote/ideas')}
                     className="text-accent hover:underline cursor-pointer"
                   >
-                    Wróć do wyboru
+                    Back to selection
                   </button>
                 </p>
               )}
@@ -133,13 +133,13 @@ export default function CustomerSubmit() {
           {/* Custom idea textarea */}
           <Card>
             <label className="block text-sm font-semibold text-text mb-2">
-              Masz własny pomysł na narzędzie SAP?
+              Do you have your own idea for a SAP tool?
             </label>
             <p className="text-xs text-text-muted mb-3">
-              Opcjonalnie opisz swój pomysł na innowacyjne rozwiązanie SAP na AWS.
+              Optionally describe your idea for an innovative SAP on AWS solution.
             </p>
             <textarea
-              placeholder="Opisz swój pomysł..."
+              placeholder="Describe the problem you'd like to solve..."
               value={customIdea}
               onChange={(e) => setCustomIdea(e.target.value.slice(0, maxChars))}
               rows={5}
@@ -147,7 +147,7 @@ export default function CustomerSubmit() {
             />
             <div className="flex justify-end mt-1">
               <span className={`text-xs ${charCount > maxChars * 0.9 ? 'text-warning' : 'text-text-muted'}`}>
-                {charCount}/{maxChars} znaków
+                {charCount}/{maxChars} characters
               </span>
             </div>
           </Card>
@@ -170,8 +170,8 @@ export default function CustomerSubmit() {
               </div>
             </div>
             <span className="text-sm text-text-muted leading-relaxed">
-              Wyrażam zgodę na przetwarzanie moich odpowiedzi w celach analizy i rozwoju produktów.
-              Moje dane będą traktowane poufnie.
+              I agree to be contacted regarding pilot programs and consent to my responses being
+              used for product analysis and development. My data will be treated confidentially.
             </span>
           </label>
 
@@ -184,10 +184,10 @@ export default function CustomerSubmit() {
             {submitting ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Wysyłanie...
+                Submitting...
               </>
             ) : (
-              'Prześlij głos'
+              'Submit Vote'
             )}
           </button>
         </div>

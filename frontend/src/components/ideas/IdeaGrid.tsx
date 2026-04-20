@@ -102,7 +102,7 @@ export function IdeaGrid({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj pomysłów..."
+            placeholder="Search ideas..."
             className="w-full pl-10 pr-8 py-2.5 bg-surface-2/60 backdrop-blur-sm border border-border rounded-xl text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 transition-all duration-200"
           />
           {searchQuery && (
@@ -120,17 +120,17 @@ export function IdeaGrid({
           <GroupToggle
             active={categoryGroup === 'all'}
             onClick={() => { setCategoryGroup('all'); onCategoryChange(null) }}
-            label="Wszystkie"
+            label="All"
           />
           <GroupToggle
             active={categoryGroup === 'technical'}
             onClick={() => { setCategoryGroup('technical'); onCategoryChange(null) }}
-            label="Techniczne"
+            label="Technical"
           />
           <GroupToggle
             active={categoryGroup === 'business'}
             onClick={() => { setCategoryGroup('business'); onCategoryChange(null) }}
-            label="Biznesowe"
+            label="Business"
           />
         </div>
       </div>
@@ -149,7 +149,7 @@ export function IdeaGrid({
           `}
           onClick={() => onCategoryChange(null)}
         >
-          Wszystkie
+          All
         </button>
         {visibleCategories.map((cat) => (
           <button
@@ -175,7 +175,7 @@ export function IdeaGrid({
 
         {/* Count */}
         <span className="ml-auto text-xs text-text-muted">
-          {filteredIdeas.length} z {ideas.length} pomysłów
+          {filteredIdeas.length} of {ideas.length} ideas
         </span>
       </div>
 
@@ -202,10 +202,10 @@ export function IdeaGrid({
             <Search className="w-7 h-7 text-text-muted" />
           </div>
           <p className="text-text-secondary text-sm mb-1">
-            Brak pomysłów w tej kategorii.
+            No ideas in this category.
           </p>
           <p className="text-text-muted text-xs">
-            Spróbuj zmienić filtr lub wyszukiwanie.
+            Try changing the filter or search.
           </p>
         </div>
       )}

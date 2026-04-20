@@ -43,13 +43,13 @@ export async function cognitoLogin(
   const data = await response.json();
 
   if (data.__type?.includes('NotAuthorizedException')) {
-    throw new Error('Nieprawidłowy email lub hasło');
+    throw new Error('Invalid email or password');
   }
   if (data.__type?.includes('UserNotFoundException')) {
-    throw new Error('Użytkownik nie istnieje');
+    throw new Error('User not found');
   }
   if (data.__type?.includes('UserNotConfirmedException')) {
-    throw new Error('Konto nie zostało potwierdzone');
+    throw new Error('Account not confirmed');
   }
   if (data.__type) {
     throw new Error(data.message || data.__type);
@@ -65,7 +65,7 @@ export async function cognitoLogin(
   }
 
   if (!data.AuthenticationResult) {
-    throw new Error('Nieoczekiwana odpowiedź z serwera autoryzacji');
+    throw new Error('Unexpected response from authentication server');
   }
 
   return {

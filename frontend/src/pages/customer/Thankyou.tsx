@@ -66,17 +66,17 @@ export default function CustomerThankyou() {
         </div>
 
         <h1 className="font-display text-4xl text-text mb-4 animate-fade-in">
-          Dziękujemy za Twój głos!
+          Thank you for your vote!
         </h1>
 
         <p className="text-text-muted text-lg mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          Twoje głosy zostały zapisane. Dziękujemy za udział w głosowaniu na innowacyjne rozwiązania SAP.
+          Your votes have been recorded. Thank you for participating in the voting on innovative SAP solutions.
         </p>
 
         {/* Summary of votes */}
         {displayIdeas.length > 0 && (
           <Card className="text-left mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <h3 className="text-sm font-semibold text-text mb-3">Twoje wybory</h3>
+            <h3 className="text-sm font-semibold text-text mb-3">Your selections</h3>
             <ul className="space-y-2">
               {displayIdeas.map((idea, i) => (
                 <li key={idea.id} className="flex items-center gap-2 text-sm">
@@ -92,18 +92,18 @@ export default function CustomerThankyou() {
         {/* If we only have IDs but no idea objects, show IDs */}
         {displayIdeas.length === 0 && votedIdeaIds.length > 0 && (
           <Card className="text-left mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <h3 className="text-sm font-semibold text-text mb-3">Twoje wybory</h3>
+            <h3 className="text-sm font-semibold text-text mb-3">Your selections</h3>
             <p className="text-sm text-text-muted">
-              Zagłosowałeś na {votedIdeaIds.length} pomysłów.
+              You voted for {votedIdeaIds.length} ideas.
             </p>
           </Card>
         )}
 
         <Card className="text-left animate-fade-in" style={{ animationDelay: '0.6s' }}>
-          <h3 className="text-sm font-semibold text-text mb-2">Co dalej?</h3>
+          <h3 className="text-sm font-semibold text-text mb-2">What's next?</h3>
           <p className="text-sm text-text-muted mb-4">
-            Wyniki głosowania zostaną przedstawione na spotkaniu podsumowującym.
-            Skontaktujemy się wkrótce z informacjami o wynikach.
+            Voting results will be announced at a summary meeting.
+            We will contact you soon with information about the results.
           </p>
 
           <div className="space-y-3">
@@ -116,7 +116,7 @@ export default function CustomerThankyou() {
 
             <button className="flex items-center gap-2 text-sm text-purple hover:text-purple/80 transition-colors cursor-pointer">
               <Calendar className="w-4 h-4" />
-              <span>Umów spotkanie</span>
+              <span>Schedule a meeting</span>
             </button>
           </div>
         </Card>

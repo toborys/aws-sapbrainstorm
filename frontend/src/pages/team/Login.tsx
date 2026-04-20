@@ -56,7 +56,7 @@ export default function TeamLogin() {
       'team',
     )
     scheduleTokenRefresh()
-    addToast({ type: 'success', message: 'Zalogowano pomyślnie!' })
+    addToast({ type: 'success', message: 'Signed in successfully!' })
     navigate('/team/dashboard')
   }
 
@@ -76,7 +76,7 @@ export default function TeamLogin() {
         } catch {
           // Ignore
         }
-        addToast({ type: 'info', message: 'Musisz ustawić nowe hasło.' })
+        addToast({ type: 'info', message: 'You need to set a new password.' })
       } else {
         completeLogin(result.tokens.idToken)
       }
@@ -130,9 +130,9 @@ export default function TeamLogin() {
               SAP <span className="text-accent">&times;</span> AWS
             </div>
           </div>
-          <h1 className="font-display text-2xl text-text mb-2">Portal Zespołu</h1>
+          <h1 className="font-display text-2xl text-text mb-2">Team Portal</h1>
           <p className="text-text-muted text-sm">
-            Zarządzaj pomysłami, klientami i wynikami
+            Manage ideas, customers and voting results
           </p>
         </div>
 
@@ -142,13 +142,13 @@ export default function TeamLogin() {
               <Input
                 label="Email"
                 type="email"
-                placeholder="admin@sapteam.pl"
+                placeholder="admin@apxteam.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
               <Input
-                label="Hasło"
+                label="Password"
                 type="password"
                 placeholder="********"
                 value={password}
@@ -163,7 +163,7 @@ export default function TeamLogin() {
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  'Zaloguj się'
+                  'Sign In'
                 )}
               </button>
             </form>
@@ -171,13 +171,13 @@ export default function TeamLogin() {
             <form onSubmit={handleNewPassword} className="space-y-5">
               <div className="text-center mb-4">
                 <p className="text-sm text-warning">
-                  Ustaw nowe hasło aby kontynuować
+                  Set a new password to continue
                 </p>
               </div>
               <Input
-                label="Nowe hasło"
+                label="New Password"
                 type="password"
-                placeholder="Min. 12 znaków, wielkie litery, cyfry, znaki specjalne"
+                placeholder="Min. 12 characters, uppercase, digits, special characters"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -190,7 +190,7 @@ export default function TeamLogin() {
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  'Ustaw hasło i zaloguj'
+                  'Set Password & Sign In'
                 )}
               </button>
             </form>
@@ -198,7 +198,7 @@ export default function TeamLogin() {
 
           <div className="mt-6 flex items-center gap-2 text-xs text-text-muted justify-center">
             <Shield className="w-3.5 h-3.5" />
-            <span>Dostęp tylko dla członków zespołu SAP</span>
+            <span>Access restricted to APX team members</span>
           </div>
         </div>
       </div>

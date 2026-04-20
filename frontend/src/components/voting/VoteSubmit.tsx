@@ -23,7 +23,7 @@ export function VoteSubmit({ selectedIdeas, onSubmit, loading }: VoteSubmitProps
       {/* Selected ideas summary */}
       <Card gradientBorder>
         <h3 className="text-sm font-semibold text-text mb-4">
-          Twoje wybrane pomysły ({selectedIdeas.length})
+          Your selected ideas ({selectedIdeas.length})
         </h3>
         <ul className="space-y-2.5">
           {selectedIdeas.map((idea, i) => (
@@ -43,11 +43,11 @@ export function VoteSubmit({ selectedIdeas, onSubmit, loading }: VoteSubmitProps
       {/* Custom idea */}
       <Card>
         <Textarea
-          label="Twój własny pomysł (opcjonalnie)"
-          placeholder="Opisz swój pomysł na innowacyjne rozwiązanie SAP na AWS..."
+          label="Your own idea (optional)"
+          placeholder="Describe your idea for an innovative SAP on AWS solution..."
           value={customIdea}
           onChange={(e) => setCustomIdea(e.target.value.slice(0, maxChars))}
-          helperText={`${charCount}/${maxChars} znaków`}
+          helperText={`${charCount}/${maxChars} characters`}
         />
       </Card>
 
@@ -65,7 +65,7 @@ export function VoteSubmit({ selectedIdeas, onSubmit, loading }: VoteSubmitProps
           </div>
         </div>
         <span className="text-sm text-text-secondary group-hover:text-text transition-colors">
-          Wyrażam zgodę na przetwarzanie moich odpowiedzi w celach analizy i rozwoju produktów.
+          I agree to the processing of my responses for product analysis and development.
         </span>
       </label>
 
@@ -78,7 +78,7 @@ export function VoteSubmit({ selectedIdeas, onSubmit, loading }: VoteSubmitProps
         loading={loading}
         onClick={() => onSubmit(customIdea || undefined)}
       >
-        Wyślij głosy
+        Submit Votes
       </Button>
     </div>
   )
