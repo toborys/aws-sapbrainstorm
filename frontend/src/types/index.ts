@@ -8,4 +8,8 @@ export type {
   UserProfile,
   BrainstormRequest,
   BrainstormSession,
+  WtpBand,
+  UrgencyBand,
+  AggregatedIdeaResult,
+  PilotListEntry,
 } from '../../../shared/types'

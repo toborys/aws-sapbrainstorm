@@ -3,6 +3,16 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import type { VotingSession } from '../types'
 import * as api from '../api/client'
 
+export interface SubmitVotesInput {
+  ideaIds: string[]
+  customIdea?: string
+  ranking?: string[]
+  wtpBand?: string
+  urgency?: string
+  pilotOptIn?: boolean
+  pilotEmail?: string
+}
+
 interface VotesState {
   votes: VotingSession | null
   hasVoted: boolean
@@ -10,7 +20,7 @@ interface VotesState {
   error: string | null
   submitting: boolean
 
-  submitVotes: (ideaIds: string[], customIdea?: string) => Promise<boolean>
+  submitVotes: (input: SubmitVotesInput) => Promise<boolean>
   fetchMyVotes: () => Promise<void>
   checkVotingStatus: () => Promise<void>
 }
@@ -24,10 +34,10 @@ export const useVotesStore = create<VotesState>()(
       error: null,
       submitting: false,
 
-      submitVotes: async (ideaIds, customIdea) => {
+      submitVotes: async (input) => {
         set({ submitting: true, error: null })
         try {
-          const result = await api.submitVotes({ ideaIds, customIdea })
+          const result = await api.submitVotes(input)
           set({ votes: result, hasVoted: true, submitting: false })
           return true
         } catch (err) {

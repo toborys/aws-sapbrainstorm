@@ -69,7 +69,15 @@ export function reorderIdeas(orderedIds: string[]) {
 }
 
 // Voting
-export function submitVotes(data: { ideaIds: string[]; customIdea?: string }) {
+export function submitVotes(data: {
+  ideaIds: string[];
+  customIdea?: string;
+  ranking?: string[];
+  wtpBand?: string;
+  urgency?: string;
+  pilotOptIn?: boolean;
+  pilotEmail?: string;
+}) {
   return request<VotingSession>('/api/votes/submit', {
     method: 'POST',
     body: JSON.stringify(data),

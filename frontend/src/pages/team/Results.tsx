@@ -20,7 +20,7 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useIdeasStore } from '../../stores/ideasStore'
 import { useResultsStore } from '../../stores/resultsStore'
-import type { IdeaCategory } from '../../types'
+import type { IdeaCategory, AggregatedIdeaResult, PilotListEntry } from '../../types'
 
 const CATEGORIES: IdeaCategory[] = [
   'Monitoring & Observability',
@@ -57,8 +57,31 @@ const trophyIcons: Record<number, string> = {
   3: '\u{1F949}',
 }
 
+const WTP_LABELS: Record<string, string> = {
+  'wont-pay': 'Would not pay',
+  'lt-100': '< EUR 100/mo',
+  '100-300': 'EUR 100-300/mo',
+  '300-800': 'EUR 300-800/mo',
+  '800-2000': 'EUR 800-2000/mo',
+  'gt-2000': '> EUR 2000/mo',
+}
+
+type DisplayMode = 'raw' | 'weighted'
+
+type RankedRow = {
+  id: string
+  name: string
+  category: IdeaCategory
+  votes: number
+  weightedScore: number
+  averageWtp: number
+  pilotInterest: number
+  rank: number
+}
+
 export default function TeamResults() {
   const [categoryFilter, setCategoryFilter] = useState<IdeaCategory | null>(null)
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('weighted')
 
   const { ideas, fetchIdeas } = useIdeasStore()
   const { voteResults, customIdeas, fetchAll, loading, error } = useResultsStore()
@@ -68,64 +91,120 @@ export default function TeamResults() {
     fetchAll()
   }, [fetchIdeas, fetchAll])
 
-  // Build ranked results from real data
-  const rankedResults = (() => {
-    if (!voteResults?.votesByIdea) return []
-    return Object.entries(voteResults.votesByIdea)
-      .map(([ideaId, votes]) => {
-        const idea = ideas.find((i) => i.id === ideaId)
+  // Build ranked results from real data.
+  // Prefer new `ideas[]` aggregate (weighted), fall back to `votesByIdea` (raw only).
+  const rankedResults: RankedRow[] = (() => {
+    const aggregatedIdeas: AggregatedIdeaResult[] | undefined = voteResults?.ideas
+    if (aggregatedIdeas && aggregatedIdeas.length > 0) {
+      const rows = aggregatedIdeas.map((a) => {
+        const idea = ideas.find((i) => i.id === a.ideaId)
         return {
-          id: ideaId,
-          name: idea?.name ?? ideaId,
-          category: idea?.category ?? ('Automation' as IdeaCategory),
-          votes,
+          id: a.ideaId,
+          name: a.title || idea?.name || a.ideaId,
+          category: (idea?.category ?? (a.category as IdeaCategory) ?? 'Automation') as IdeaCategory,
+          votes: a.voteCount ?? 0,
+          weightedScore: a.weightedScore ?? 0,
+          averageWtp: a.averageWtp ?? 0,
+          pilotInterest: a.pilotInterest ?? 0,
           rank: 0,
         }
       })
-      .sort((a, b) => b.votes - a.votes)
-      .map((item, idx) => ({ ...item, rank: idx + 1 }))
+      const sortKey = displayMode === 'weighted' ? 'weightedScore' : 'votes'
+      rows.sort((a, b) => (b[sortKey] as number) - (a[sortKey] as number))
+      return rows.map((r, i) => ({ ...r, rank: i + 1 }))
+    }
+    // Fallback: old schema
+    if (voteResults?.votesByIdea) {
+      return Object.entries(voteResults.votesByIdea)
+        .map(([ideaId, votes]) => {
+          const idea = ideas.find((i) => i.id === ideaId)
+          return {
+            id: ideaId,
+            name: idea?.name ?? ideaId,
+            category: (idea?.category ?? 'Automation') as IdeaCategory,
+            votes: votes as number,
+            weightedScore: 0,
+            averageWtp: 0,
+            pilotInterest: 0,
+            rank: 0,
+          }
+        })
+        .sort((a, b) => b.votes - a.votes)
+        .map((item, idx) => ({ ...item, rank: idx + 1 }))
+    }
+    return []
   })()
+
+  const hasWeightedData = rankedResults.some((r) => r.weightedScore > 0)
 
   const filteredResults = categoryFilter
     ? rankedResults.filter((r) => r.category === categoryFilter)
     : rankedResults
 
-  // Build pie chart data from category distribution
+  // Data for the bar chart: use weighted score when toggled (and available), else raw votes
+  const chartData = filteredResults.map((r) => ({
+    name: r.name,
+    value: displayMode === 'weighted' && hasWeightedData ? r.weightedScore : r.votes,
+  }))
+
   const pieData = (() => {
     const categoryVotes: Record<string, number> = {}
     for (const result of rankedResults) {
       const cat = result.category
-      categoryVotes[cat] = (categoryVotes[cat] || 0) + result.votes
+      const value =
+        displayMode === 'weighted' && hasWeightedData ? result.weightedScore : result.votes
+      categoryVotes[cat] = (categoryVotes[cat] || 0) + value
     }
     return Object.entries(categoryVotes)
       .map(([name, value]) => ({
         name,
-        value,
+        value: Number(value.toFixed(2)),
         color: CATEGORY_COLORS[name] || DEFAULT_COLOR,
       }))
       .sort((a, b) => b.value - a.value)
   })()
 
-  // Collect unique categories that exist in the data
   const usedCategories = Array.from(new Set(rankedResults.map((r) => r.category)))
   const allCategories = CATEGORIES.filter((c) => usedCategories.includes(c))
-  // Also add any categories from data that aren't in the predefined list
   for (const cat of usedCategories) {
     if (!allCategories.includes(cat)) {
       allCategories.push(cat)
     }
   }
 
+  const pilotList: PilotListEntry[] = voteResults?.pilotList ?? []
+
   const handleExportCSV = () => {
     const csv = [
-      'Rank,Idea,Category,Votes',
-      ...filteredResults.map((r) => `${r.rank},"${r.name}",${r.category},${r.votes}`),
+      'Rank,Idea,Category,Raw votes,Weighted score,Avg WTP (EUR/mo),Pilot interest',
+      ...filteredResults.map(
+        (r) =>
+          `${r.rank},"${r.name}",${r.category},${r.votes},${r.weightedScore.toFixed(
+            2,
+          )},${r.averageWtp},${r.pilotInterest}`,
+      ),
     ].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = 'voting-results.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportPilotCSV = () => {
+    const csv = [
+      'Email,Idea,Rank,WTP band',
+      ...pilotList.map(
+        (p) => `"${p.email}","${p.ideaName}",${p.rank},${WTP_LABELS[p.wtpBand] || p.wtpBand}`,
+      ),
+    ].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'pilot-optins.csv'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -150,9 +229,7 @@ export default function TeamResults() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-display text-3xl text-text mb-2">Voting Results</h1>
-            <p className="text-text-muted">
-              Vote summary and idea ranking
-            </p>
+            <p className="text-text-muted">Vote summary and idea ranking</p>
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -175,6 +252,35 @@ export default function TeamResults() {
         {error && (
           <div className="mb-6 p-4 bg-error/10 border border-error/30 rounded-xl text-sm text-error">
             Error loading data: {error}
+          </div>
+        )}
+
+        {/* Display mode toggle */}
+        {hasWeightedData && (
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs text-text-muted">Show:</span>
+            <div className="inline-flex rounded-lg bg-surface-2 border border-border p-0.5">
+              <button
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                  displayMode === 'raw'
+                    ? 'bg-accent text-white'
+                    : 'text-text-muted hover:text-text'
+                }`}
+                onClick={() => setDisplayMode('raw')}
+              >
+                Raw votes
+              </button>
+              <button
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                  displayMode === 'weighted'
+                    ? 'bg-accent text-white'
+                    : 'text-text-muted hover:text-text'
+                }`}
+                onClick={() => setDisplayMode('weighted')}
+              >
+                Weighted score
+              </button>
+            </div>
           </div>
         )}
 
@@ -210,15 +316,20 @@ export default function TeamResults() {
 
         {/* Charts row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Bar chart */}
           <Card className="lg:col-span-2">
-            <h3 className="text-sm font-semibold text-text mb-4">Idea Ranking</h3>
+            <h3 className="text-sm font-semibold text-text mb-4">
+              Idea Ranking ({displayMode === 'weighted' && hasWeightedData ? 'weighted' : 'raw votes'})
+            </h3>
             <div className="h-80">
-              {filteredResults.length > 0 ? (
+              {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={filteredResults} layout="vertical" margin={{ left: 10, right: 20 }}>
+                  <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis type="number" tick={{ fill: '#555770', fontSize: 12 }} axisLine={{ stroke: 'rgba(255,255,255,0.06)' }} />
+                    <XAxis
+                      type="number"
+                      tick={{ fill: '#555770', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+                    />
                     <YAxis
                       dataKey="name"
                       type="category"
@@ -242,7 +353,7 @@ export default function TeamResults() {
                         <stop offset="100%" stopColor="#a78bfa" />
                       </linearGradient>
                     </defs>
-                    <Bar dataKey="votes" fill="url(#resultBarGradient)" radius={[0, 6, 6, 0]} />
+                    <Bar dataKey="value" fill="url(#resultBarGradient)" radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -253,7 +364,6 @@ export default function TeamResults() {
             </div>
           </Card>
 
-          {/* Pie chart */}
           <Card>
             <h3 className="text-sm font-semibold text-text mb-4">Category Distribution</h3>
             <div className="h-64">
@@ -293,11 +403,10 @@ export default function TeamResults() {
               {pieData.map((item) => (
                 <div key={item.name} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-text-muted">{CATEGORY_SHORT_LABELS[item.name] || item.name}</span>
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-text-muted">
+                      {CATEGORY_SHORT_LABELS[item.name] || item.name}
+                    </span>
                   </div>
                   <span className="text-text font-mono">{item.value}</span>
                 </div>
@@ -306,9 +415,11 @@ export default function TeamResults() {
           </Card>
         </div>
 
-        {/* Ranked table */}
+        {/* WP-22: Weighted ranking table */}
         <Card className="mb-8">
-          <h3 className="text-sm font-semibold text-text mb-4">Results Table</h3>
+          <h3 className="text-sm font-semibold text-text mb-4">
+            {hasWeightedData ? 'Weighted Ranking' : 'Results Table'}
+          </h3>
           <div className="overflow-x-auto">
             {filteredResults.length > 0 ? (
               <table className="w-full text-sm">
@@ -317,7 +428,20 @@ export default function TeamResults() {
                     <th className="pb-3 text-text-muted font-medium w-16">#</th>
                     <th className="pb-3 text-text-muted font-medium">Idea</th>
                     <th className="pb-3 text-text-muted font-medium">Category</th>
-                    <th className="pb-3 text-text-muted font-medium text-right">Votes</th>
+                    <th className="pb-3 text-text-muted font-medium text-right">Raw votes</th>
+                    {hasWeightedData && (
+                      <>
+                        <th className="pb-3 text-text-muted font-medium text-right">
+                          Weighted score
+                        </th>
+                        <th className="pb-3 text-text-muted font-medium text-right">
+                          Avg WTP (EUR/mo)
+                        </th>
+                        <th className="pb-3 text-text-muted font-medium text-right">
+                          Pilot interest
+                        </th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -344,17 +468,78 @@ export default function TeamResults() {
                       <td className="py-4 text-right">
                         <span className="text-text font-mono text-lg">{row.votes}</span>
                       </td>
+                      {hasWeightedData && (
+                        <>
+                          <td className="py-4 text-right">
+                            <span className="text-text font-mono">
+                              {row.weightedScore.toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="py-4 text-right">
+                            <span className="text-text-muted font-mono">
+                              {row.averageWtp > 0 ? row.averageWtp : '-'}
+                            </span>
+                          </td>
+                          <td className="py-4 text-right">
+                            <span className="text-text-muted font-mono">
+                              {row.pilotInterest > 0 ? row.pilotInterest : '-'}
+                            </span>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             ) : (
-              <div className="text-center py-12 text-text-muted text-sm">
-                No results to display
-              </div>
+              <div className="text-center py-12 text-text-muted text-sm">No results to display</div>
             )}
           </div>
         </Card>
+
+        {/* WP-22: Pilot opt-ins */}
+        {pilotList.length > 0 && (
+          <Card className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-text">
+                Pilot programme opt-ins ({pilotList.length})
+              </h3>
+              <Button
+                variant="secondary"
+                icon={<FileSpreadsheet className="w-4 h-4" />}
+                onClick={handleExportPilotCSV}
+              >
+                Export CSV
+              </Button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="pb-3 text-text-muted font-medium">Email</th>
+                    <th className="pb-3 text-text-muted font-medium">Idea</th>
+                    <th className="pb-3 text-text-muted font-medium text-right">
+                      Rank in their picks
+                    </th>
+                    <th className="pb-3 text-text-muted font-medium">WTP band</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pilotList.map((p, idx) => (
+                    <tr key={`${p.email}-${p.ideaId}-${idx}`} className="border-b border-border/50">
+                      <td className="py-3 text-text font-mono text-xs">{p.email}</td>
+                      <td className="py-3 text-text">{p.ideaName}</td>
+                      <td className="py-3 text-right text-text-muted font-mono">{p.rank}</td>
+                      <td className="py-3 text-text-muted text-xs">
+                        {WTP_LABELS[p.wtpBand] || p.wtpBand || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
 
         {/* Custom ideas section */}
         <Card>

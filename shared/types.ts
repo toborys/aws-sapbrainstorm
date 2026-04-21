@@ -66,6 +66,16 @@ export interface Vote {
   userCompany: string;
 }
 
+export type WtpBand =
+  | 'lt-100'
+  | '100-300'
+  | '300-800'
+  | '800-2000'
+  | 'gt-2000'
+  | 'wont-pay';
+
+export type UrgencyBand = '0-3m' | '3-12m' | '12m-plus' | 'not-sure';
+
 export interface VotingSession {
   userId: string;
   userEmail: string;
@@ -74,6 +84,12 @@ export interface VotingSession {
   customIdea?: string;
   submittedAt: string;
   ipAddress: string;
+  // --- Extended (WP-19): optional for backward compat with existing rows ---
+  ranking?: string[];                                    // ordered idea IDs (index 0 = top preference)
+  wtpBand?: WtpBand;
+  urgency?: UrgencyBand;
+  pilotOptIn?: boolean;
+  pilotEmail?: string;                                   // required only if pilotOptIn=true
 }
 
 export interface CustomIdea {
@@ -88,12 +104,42 @@ export interface CustomIdea {
   adminNotes?: string;
 }
 
+export interface AggregatedIdeaResult {
+  ideaId: string;
+  title?: string;
+  category?: string;
+  voteCount: number;
+  weightedScore?: number;
+  averageWtp?: number;
+  pilotInterest?: number;
+  urgencyBreakdown?: {
+    '0-3m': number;
+    '3-12m': number;
+    '12m-plus': number;
+    'not-sure': number;
+  };
+}
+
+export interface PilotListEntry {
+  ideaId: string;
+  ideaName: string;
+  email: string;
+  rank: number;
+  wtpBand: string;
+}
+
 export interface VoteResults {
-  lastUpdated: string;
+  lastUpdated?: string;
   votesByIdea: Record<string, number>;
-  totalVoters: number;
-  participationRate: number;
-  topIdeas: string[];
+  totalVoters?: number;
+  participationRate?: number;
+  topIdeas?: string[];
+  // --- Extended (WP-21) ---
+  totalVotes?: number;
+  uniqueVoters?: number;
+  ideas?: AggregatedIdeaResult[];
+  pilotList?: PilotListEntry[];
+  updatedAt?: string;
 }
 
 export interface UserProfile {
