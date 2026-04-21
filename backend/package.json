@@ -19,6 +19,8 @@
     "@aws-sdk/client-sesv2": "^3.1025.0",
     "@aws-sdk/lib-dynamodb": "^3.700.0",
     "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "@types/adm-zip": "^0.5.8",
+    "adm-zip": "^0.5.17",
     "aws-jwt-verify": "^4.0.0"
   },
   "devDependencies": {

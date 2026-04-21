@@ -146,3 +146,15 @@ export const brainstormIdeas = startBrainstorm
 export function getBrainstormHistory() {
   return request<Array<{ key: string; lastModified: string }>>('/api/brainstorm/history')
 }
+
+export function generateBuildKit(ideaId: string) {
+  return request<{
+    ideaId: string;
+    generatedAt: string;
+    files: string[];
+    presignedUrl: string;
+    expiresAt: string;
+  }>(`/api/ideas/${ideaId}/build-kit`, {
+    method: 'POST',
+  })
+}

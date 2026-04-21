@@ -197,13 +197,21 @@ export class SapInnovationStack extends cdk.Stack {
     const ideasListFn = createLambda('IdeasList', 'dist/handlers/ideas-list.handler');
     const ideasGetFn = createLambda('IdeasGet', 'dist/handlers/ideas-get.handler');
     const ideasCreateFn = createLambda('IdeasCreate', 'dist/handlers/ideas-create.handler');
+    dataBucket.grantReadWrite(ideasCreateFn); // Knowledge Base mirror
     const ideasUpdateFn = createLambda('IdeasUpdate', 'dist/handlers/ideas-update.handler');
     const ideasDeleteFn = createLambda('IdeasDelete', 'dist/handlers/ideas-delete.handler');
     const ideasReorderFn = createLambda('IdeasReorder', 'dist/handlers/ideas-reorder.handler');
+    const ideasBuildKitFn = createLambda('IdeasBuildKit', 'dist/handlers/ideas-build-kit.handler', {
+      memory: 512,
+      timeout: 30,
+    });
+    dataBucket.grantReadWrite(ideasBuildKitFn);
+    table.grantReadData(ideasBuildKitFn);
 
     // Voting API
     const votesMyFn = createLambda('VotesMy', 'dist/handlers/votes-my.handler');
     const votesSubmitFn = createLambda('VotesSubmit', 'dist/handlers/votes-submit.handler');
+    dataBucket.grantReadWrite(votesSubmitFn); // Knowledge Base mirror for custom ideas
     const votesResultsFn = createLambda('VotesResults', 'dist/handlers/votes-results.handler');
     const votesSummaryFn = createLambda('VotesSummary', 'dist/handlers/votes-summary.handler');
 
@@ -364,6 +372,12 @@ export class SapInnovationStack extends cdk.Stack {
       path: '/api/ideas/reorder',
       methods: [apigatewayv2.HttpMethod.PUT],
       integration: new integrations.HttpLambdaIntegration('IdeasReorderInt', ideasReorderFn),
+      authorizer: teamAuthorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/ideas/{id}/build-kit',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration('IdeasBuildKitInt', ideasBuildKitFn),
       authorizer: teamAuthorizer,
     });
 

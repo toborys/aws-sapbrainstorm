@@ -4,6 +4,7 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE_NAME } from '../lib/dynamo.js';
 import { extractToken, verifyTeamToken } from '../lib/auth.js';
 import { created, badRequest, unauthorized, serverError } from '../lib/response.js';
+import { mirrorIdeaToKnowledgeBase } from '../lib/knowledge-base.js';
 
 export const handler = async (event: APIGatewayProxyEventV2) => {
   try {
@@ -80,6 +81,10 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         Item: item,
       }),
     );
+
+    // Mirror to Knowledge Base (S3) — non-fatal, runs in background
+    // Every idea saved to portfolio becomes durable R&D material
+    await mirrorIdeaToKnowledgeBase(item as { id: string; name: string; category: string });
 
     return created(item);
   } catch (err) {

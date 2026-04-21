@@ -3,6 +3,7 @@ import { TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE_NAME } from '../lib/dynamo.js';
 import { extractToken, verifyCustomerToken } from '../lib/auth.js';
 import { ok, badRequest, unauthorized, serverError } from '../lib/response.js';
+import { mirrorCustomIdeaToKnowledgeBase } from '../lib/knowledge-base.js';
 
 export const handler = async (event: APIGatewayProxyEventV2) => {
   try {
@@ -86,6 +87,16 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         TransactItems: transactItems,
       }),
     );
+
+    // Mirror custom idea (if any) to Knowledge Base — non-fatal
+    if (customIdea && typeof customIdea === 'string' && customIdea.trim().length > 0) {
+      await mirrorCustomIdeaToKnowledgeBase(now, {
+        userId,
+        content: customIdea.trim(),
+        votedFor: ideaIds,
+        submittedAt: now,
+      });
+    }
 
     return ok({ message: 'Votes submitted successfully', ideaIds, customIdea: customIdea || null });
   } catch (err) {

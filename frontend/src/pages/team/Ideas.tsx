@@ -29,6 +29,8 @@ import {
   Search,
   LayoutGrid,
   List,
+  Rocket,
+  Loader2,
 } from 'lucide-react'
 import { AppShell } from '../../components/layout/AppShell'
 import { TopNav } from '../../components/layout/TopNav'
@@ -41,7 +43,7 @@ import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import { useIdeasStore } from '../../stores/ideasStore'
 import { useUiStore } from '../../stores/uiStore'
-import { createIdea, updateIdea, reorderIdeas } from '../../api/client'
+import { createIdea, updateIdea, reorderIdeas, generateBuildKit } from '../../api/client'
 import type { Idea, IdeaCategory } from '../../types'
 
 const CATEGORIES: IdeaCategory[] = [
@@ -112,11 +114,15 @@ function SortableIdea({
   onToggleStatus,
   onEdit,
   onArchive,
+  onPromoteToBuild,
+  isGeneratingBuildKit,
 }: {
   idea: Idea
   onToggleStatus: (id: string) => void
   onEdit: (idea: Idea) => void
   onArchive: (id: string) => void
+  onPromoteToBuild: (id: string) => void
+  isGeneratingBuildKit: string | null
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: idea.id,
@@ -185,6 +191,18 @@ function SortableIdea({
           <Pencil className="w-4 h-4" />
         </button>
         <button
+          onClick={() => onPromoteToBuild(idea.id)}
+          disabled={isGeneratingBuildKit === idea.id}
+          className="p-1.5 rounded-lg text-text-muted hover:text-accent hover:bg-surface-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Promote to Build"
+        >
+          {isGeneratingBuildKit === idea.id ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Rocket className="w-4 h-4" />
+          )}
+        </button>
+        <button
           onClick={() => onArchive(idea.id)}
           className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-surface-2 transition-colors cursor-pointer"
           title="Archive"
@@ -201,11 +219,15 @@ function IdeaGridCard({
   onToggleStatus,
   onEdit,
   onArchive,
+  onPromoteToBuild,
+  isGeneratingBuildKit,
 }: {
   idea: Idea
   onToggleStatus: (id: string) => void
   onEdit: (idea: Idea) => void
   onArchive: (id: string) => void
+  onPromoteToBuild: (id: string) => void
+  isGeneratingBuildKit: string | null
 }) {
   return (
     <Card
@@ -220,18 +242,33 @@ function IdeaGridCard({
         <button
           onClick={() => onToggleStatus(idea.id)}
           className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+          title={idea.status === 'active' ? 'Hide' : 'Show'}
         >
           {idea.status === 'active' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>
         <button
           onClick={() => onEdit(idea)}
           className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer"
+          title="Edit"
         >
           <Pencil className="w-4 h-4" />
         </button>
         <button
+          onClick={() => onPromoteToBuild(idea.id)}
+          disabled={isGeneratingBuildKit === idea.id}
+          className="p-1.5 rounded-lg text-text-muted hover:text-accent hover:bg-surface-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Promote to Build"
+        >
+          {isGeneratingBuildKit === idea.id ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Rocket className="w-4 h-4" />
+          )}
+        </button>
+        <button
           onClick={() => onArchive(idea.id)}
           className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-surface-2 transition-colors cursor-pointer"
+          title="Archive"
         >
           <Archive className="w-4 h-4" />
         </button>
@@ -291,6 +328,7 @@ export default function TeamIdeas() {
     return 'list'
   })
   const [_saving, setSaving] = useState(false)
+  const [isGeneratingBuildKit, setIsGeneratingBuildKit] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -358,6 +396,23 @@ export default function TeamIdeas() {
     } catch (err) {
       addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
       fetchIdeas()
+    }
+  }
+
+  const handlePromoteToBuild = async (id: string) => {
+    setIsGeneratingBuildKit(id)
+    addToast({ type: 'info', message: 'Generating build kit...' })
+    try {
+      const result = await generateBuildKit(id)
+      addToast({ type: 'success', message: 'Build kit ready — downloading...' })
+      window.location.href = result.presignedUrl
+    } catch (err) {
+      addToast({
+        type: 'error',
+        message: `Build kit failed: ${(err as Error).message} — retry?`,
+      })
+    } finally {
+      setIsGeneratingBuildKit(null)
     }
   }
 
@@ -527,6 +582,8 @@ export default function TeamIdeas() {
                       onToggleStatus={handleToggleStatus}
                       onEdit={setEditingIdea}
                       onArchive={handleArchive}
+                      onPromoteToBuild={handlePromoteToBuild}
+                      isGeneratingBuildKit={isGeneratingBuildKit}
                     />
                   ))}
                 </div>
@@ -549,6 +606,8 @@ export default function TeamIdeas() {
                 onToggleStatus={handleToggleStatus}
                 onEdit={setEditingIdea}
                 onArchive={handleArchive}
+                onPromoteToBuild={handlePromoteToBuild}
+                isGeneratingBuildKit={isGeneratingBuildKit}
               />
             ))}
             {filtered.length === 0 && (
