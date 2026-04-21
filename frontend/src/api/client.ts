@@ -234,3 +234,28 @@ export function generateBuildKit(ideaId: string) {
     method: 'POST',
   })
 }
+
+export function pushIdeaToGithub(ideaId: string, input: {
+  githubToken: string;
+  repoName?: string;
+  private?: boolean;
+  organization?: string;
+}) {
+  return request<{
+    ideaId: string;
+    repo: {
+      ownerLogin: string;
+      repoName: string;
+      htmlUrl: string;
+      cloneUrl: string;
+      sshUrl: string;
+      defaultBranch: string;
+    };
+    ownerLogin: string;
+    fileCount: number;
+    pushedAt: string;
+  }>(`/api/ideas/${ideaId}/push-to-github`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}

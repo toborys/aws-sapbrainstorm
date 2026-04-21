@@ -218,6 +218,15 @@ export class SapInnovationStack extends cdk.Stack {
     dataBucket.grantReadWrite(ideasBuildKitFn);
     table.grantReadData(ideasBuildKitFn);
 
+    // Push-to-GitHub: creates a repo and commits the build-kit files via
+    // GitHub REST API using a user-provided PAT (passed in request body).
+    // 9 blobs + 3 other API calls — allow timeout margin.
+    const ideasPushGithubFn = createLambda('IdeasPushGithub', 'dist/handlers/ideas-push-to-github.handler', {
+      memory: 512,
+      timeout: 60,
+    });
+    table.grantReadData(ideasPushGithubFn);
+
     // One-shot backfill for existing ideas without embeddings. Bedrock is
     // throttled per-account so we keep this on a longer timeout.
     const ideasBackfillEmbeddingsFn = createLambda(
@@ -414,6 +423,12 @@ export class SapInnovationStack extends cdk.Stack {
       path: '/api/ideas/{id}/build-kit',
       methods: [apigatewayv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration('IdeasBuildKitInt', ideasBuildKitFn),
+      authorizer: teamAuthorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/ideas/{id}/push-to-github',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration('IdeasPushGithubInt', ideasPushGithubFn),
       authorizer: teamAuthorizer,
     });
     httpApi.addRoutes({

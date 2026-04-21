@@ -20,14 +20,31 @@ import {
   FileText,
   Loader2,
   Sparkles,
+  Github,
+  ExternalLink,
 } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { MermaidDiagram } from '../ui/MermaidDiagram'
 import { BRAINSTORM_AGENTS } from '../../config/agents'
 import { useUiStore } from '../../stores/uiStore'
-import { generateBuildKit } from '../../api/client'
+import { generateBuildKit, pushIdeaToGithub } from '../../api/client'
 import type { Idea } from '../../types'
+
+interface GithubPushResult {
+  ideaId: string
+  repo: {
+    ownerLogin: string
+    repoName: string
+    htmlUrl: string
+    cloneUrl: string
+    sshUrl: string
+    defaultBranch: string
+  }
+  ownerLogin: string
+  fileCount: number
+  pushedAt: string
+}
 
 interface IdeaModalProps {
   idea: Idea | null
@@ -99,8 +116,56 @@ export function IdeaModal({
     presignedUrl: string
     expiresAt: string
   } | null>(null)
+  const [showGithubForm, setShowGithubForm] = useState(false)
+  const [githubToken, setGithubToken] = useState(
+    () => localStorage.getItem('apx-github-token') || '',
+  )
+  const [rememberToken, setRememberToken] = useState(
+    () => !!localStorage.getItem('apx-github-token'),
+  )
+  const [repoName, setRepoName] = useState('')
+  const [organization, setOrganization] = useState('')
+  const [isPrivate, setIsPrivate] = useState(true)
+  const [pushingToGithub, setPushingToGithub] = useState(false)
+  const [githubResult, setGithubResult] = useState<GithubPushResult | null>(null)
   const { addToast } = useUiStore()
   const navigate = useNavigate()
+
+  const kebabCaseName = idea
+    ? idea.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 100)
+    : 'apx-idea'
+
+  const handlePushToGithub = async () => {
+    if (!idea || !githubToken) return
+    setPushingToGithub(true)
+    setGithubResult(null)
+    try {
+      if (rememberToken) {
+        localStorage.setItem('apx-github-token', githubToken)
+      } else {
+        localStorage.removeItem('apx-github-token')
+      }
+      const result = await pushIdeaToGithub(idea.id, {
+        githubToken,
+        repoName: repoName || kebabCaseName,
+        private: isPrivate,
+        organization: organization || undefined,
+      })
+      setGithubResult(result)
+      addToast({ type: 'success', message: 'GitHub repo created!' })
+    } catch (err) {
+      addToast({
+        type: 'error',
+        message: `GitHub push failed: ${(err as Error).message}`,
+      })
+    } finally {
+      setPushingToGithub(false)
+    }
+  }
 
   const handleEvolveIdea = () => {
     if (!idea) return
@@ -131,6 +196,10 @@ export function IdeaModal({
     if (isOpen && idea) {
       setActiveTab('overview')
       setBuildKitResult(null)
+      setShowGithubForm(false)
+      setGithubResult(null)
+      setRepoName('')
+      setOrganization('')
     }
   }, [isOpen, idea?.id])
 
@@ -262,6 +331,24 @@ export function IdeaModal({
               result={buildKitResult}
               onGenerate={handleGenerateBuildKit}
               onEvolve={handleEvolveIdea}
+              githubForm={{
+                show: showGithubForm,
+                setShow: setShowGithubForm,
+                token: githubToken,
+                setToken: setGithubToken,
+                remember: rememberToken,
+                setRemember: setRememberToken,
+                repoName,
+                setRepoName,
+                organization,
+                setOrganization,
+                isPrivate,
+                setIsPrivate,
+                pushing: pushingToGithub,
+                result: githubResult,
+                kebabCaseName,
+                onPush: handlePushToGithub,
+              }}
             />
           )}
         </div>
@@ -668,18 +755,39 @@ function AiOriginTab({ idea }: { idea: Idea }) {
   )
 }
 
+interface GithubFormState {
+  show: boolean
+  setShow: (v: boolean) => void
+  token: string
+  setToken: (v: string) => void
+  remember: boolean
+  setRemember: (v: boolean) => void
+  repoName: string
+  setRepoName: (v: string) => void
+  organization: string
+  setOrganization: (v: string) => void
+  isPrivate: boolean
+  setIsPrivate: (v: boolean) => void
+  pushing: boolean
+  result: GithubPushResult | null
+  kebabCaseName: string
+  onPush: () => void
+}
+
 function BuildKitTab({
   idea,
   isGenerating,
   result,
   onGenerate,
   onEvolve,
+  githubForm,
 }: {
   idea: Idea
   isGenerating: boolean
   result: { files: string[]; presignedUrl: string; expiresAt: string } | null
   onGenerate: () => void
   onEvolve: () => void
+  githubForm: GithubFormState
 }) {
   const defaultFiles = [
     'README.md',
@@ -783,6 +891,127 @@ function BuildKitTab({
               Link expires{' '}
               {new Date(result.expiresAt).toLocaleString()}
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* GitHub section */}
+      <div className="mt-6 pt-6 border-t border-border">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0">
+            <Github className="w-5 h-5 text-text" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-text mb-1">Push to GitHub</h4>
+            <p className="text-xs text-text-muted">
+              Create a new GitHub repository with the build-kit files already committed.
+              Requires a Personal Access Token with <code className="text-accent">repo</code> scope.
+            </p>
+          </div>
+        </div>
+
+        {!githubForm.show ? (
+          <Button
+            variant="secondary"
+            onClick={() => githubForm.setShow(true)}
+            icon={<Github className="w-4 h-4" />}
+          >
+            Set up GitHub push
+          </Button>
+        ) : (
+          <div className="space-y-3 p-4 rounded-xl bg-surface-2/40 border border-border">
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">GitHub Personal Access Token</label>
+              <input
+                type="password"
+                value={githubForm.token}
+                onChange={(e) => githubForm.setToken(e.target.value)}
+                placeholder="ghp_..."
+                className="w-full px-3 py-2 text-sm bg-surface border border-border rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent/50"
+              />
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="checkbox"
+                  id="github-remember"
+                  checked={githubForm.remember}
+                  onChange={(e) => githubForm.setRemember(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="github-remember" className="text-[11px] text-text-muted cursor-pointer">
+                  Remember in this browser (localStorage)
+                </label>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-text-muted mb-1 block">Repo name</label>
+                <input
+                  type="text"
+                  value={githubForm.repoName}
+                  onChange={(e) => githubForm.setRepoName(e.target.value)}
+                  placeholder={githubForm.kebabCaseName}
+                  className="w-full px-3 py-2 text-sm bg-surface border border-border rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent/50"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-text-muted mb-1 block">Organization (optional)</label>
+                <input
+                  type="text"
+                  value={githubForm.organization}
+                  onChange={(e) => githubForm.setOrganization(e.target.value)}
+                  placeholder="leave empty = personal"
+                  className="w-full px-3 py-2 text-sm bg-surface border border-border rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent/50"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="github-private"
+                checked={githubForm.isPrivate}
+                onChange={(e) => githubForm.setIsPrivate(e.target.checked)}
+                className="rounded"
+              />
+              <label htmlFor="github-private" className="text-xs text-text-muted cursor-pointer">
+                Private repository
+              </label>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                onClick={githubForm.onPush}
+                disabled={!githubForm.token || githubForm.pushing}
+                icon={
+                  githubForm.pushing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Github className="w-4 h-4" />
+                  )
+                }
+              >
+                {githubForm.pushing ? 'Pushing...' : 'Create & push'}
+              </Button>
+              <Button variant="ghost" onClick={() => githubForm.setShow(false)}>
+                Cancel
+              </Button>
+            </div>
+            {githubForm.result && (
+              <div className="mt-3 p-3 rounded-lg bg-success/10 border border-success/30">
+                <p className="text-xs font-semibold text-success mb-2">Repo created!</p>
+                <a
+                  href={githubForm.result.repo.htmlUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-accent hover:underline flex items-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  {githubForm.result.repo.ownerLogin}/{githubForm.result.repo.repoName}
+                </a>
+                <div className="mt-2 text-[11px] text-text-muted font-mono">
+                  <span className="text-text">Clone:</span> git clone {githubForm.result.repo.cloneUrl}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
