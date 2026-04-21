@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Sparkles,
   Brain,
@@ -100,6 +101,13 @@ interface SessionHistoryItem {
 export default function BrainstormPanel() {
   const { ideas, fetchIdeas } = useIdeasStore()
   const { addToast } = useUiStore()
+
+  // Evolve-from-idea query param support
+  const [searchParams] = useSearchParams()
+  const evolveFromIdeaId = searchParams.get('evolve')
+  const evolveSeed = evolveFromIdeaId
+    ? ideas.find((i) => i.id === evolveFromIdeaId) || null
+    : null
 
   // Agent selection — persisted to localStorage
   // Panel is the same 3-expert advisory panel; default is all selected
@@ -279,7 +287,8 @@ export default function BrainstormPanel() {
         count: ideaCount,
         agents: Array.from(selectedAgents),
         categoryGroup: ideaType === 'all' ? undefined : ideaType,
-      })
+        ...(evolveFromIdeaId ? { evolveFromIdeaId } : {}),
+      } as any)
 
       const sessionId = startResult.sessionId
 
@@ -573,6 +582,25 @@ export default function BrainstormPanel() {
             </div>
           </div>
         </div>
+
+        {/* ============ EVOLVE BANNER ============ */}
+        {evolveSeed && viewMode === 'config' && (
+          <div className="mb-6 p-4 rounded-xl bg-accent/10 border border-accent/30 flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-text">Evolving: {evolveSeed.name}</p>
+              <p className="text-xs text-text-muted mt-1">
+                The panel will generate extensions, adjacent opportunities, and pivots based on this idea.
+              </p>
+            </div>
+            <button
+              onClick={() => { window.history.replaceState({}, '', '/team/brainstorm'); window.location.reload() }}
+              className="text-xs text-text-muted hover:text-text cursor-pointer"
+            >
+              Clear
+            </button>
+          </div>
+        )}
 
         {/* ============ CONFIG VIEW ============ */}
         {viewMode === 'config' && (

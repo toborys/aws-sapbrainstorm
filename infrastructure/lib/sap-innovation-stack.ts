@@ -226,6 +226,7 @@ export class SapInnovationStack extends cdk.Stack {
       resources: ['*'],
     }));
     dataBucket.grantReadWrite(brainstormWorkerFn);
+    table.grantReadData(brainstormWorkerFn); // Evolve mode reads seed idea from DDB
 
     // Brainstorm generate (API-facing, starts async worker)
     const brainstormGenerateFn = createLambda('BrainstormGenerate', 'dist/handlers/brainstorm-generate.handler', {
@@ -246,6 +247,10 @@ export class SapInnovationStack extends cdk.Stack {
 
     const brainstormHistoryFn = createLambda('BrainstormHistory', 'dist/handlers/brainstorm-history.handler');
     dataBucket.grantRead(brainstormHistoryFn);
+
+    // Knowledge Base stats
+    const kbStatsFn = createLambda('KnowledgeBaseStats', 'dist/handlers/knowledge-base-stats.handler');
+    dataBucket.grantRead(kbStatsFn);
 
     // Admin API
     const adminCustomersListFn = createLambda('AdminCustomersList', 'dist/handlers/admin-customers-list.handler');
@@ -424,6 +429,12 @@ export class SapInnovationStack extends cdk.Stack {
       path: '/api/brainstorm/history',
       methods: [apigatewayv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration('BrainstormHistInt', brainstormHistoryFn),
+      authorizer: teamAuthorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/knowledge-base/stats',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration('KbStatsInt', kbStatsFn),
       authorizer: teamAuthorizer,
     });
 

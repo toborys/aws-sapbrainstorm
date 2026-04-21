@@ -22,10 +22,11 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { category, prompt, count, agents, categoryGroup } = body;
+    const { category, prompt, count, agents, categoryGroup, evolveFromIdeaId } = body;
 
     const ideaCount = Math.min(Math.max(count ?? 5, 1), 10);
     const sessionId = `${Date.now()}-${userId}`;
+    const mode = evolveFromIdeaId ? 'evolve' : 'new';
 
     // Save initial session status to S3
     await s3.send(
@@ -36,6 +37,8 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
           sessionId,
           userId,
           status: 'generating',
+          mode,
+          evolveFromIdeaId: evolveFromIdeaId || null,
           category: category || 'all',
           categoryGroup: categoryGroup || 'all',
           prompt: prompt || null,
@@ -63,6 +66,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
             prompt: prompt || null,
             count: ideaCount,
             agents: agents || [],
+            evolveFromIdeaId: evolveFromIdeaId || null,
           }),
         ),
       }),

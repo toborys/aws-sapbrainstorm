@@ -17,8 +17,14 @@
 
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { estimateCost } from '../lib/aws-pricing-static.js';
 import { getKnowledgeBaseContext, formatKbContext } from '../lib/kb-retrieve.js';
+
+const ddbClient = new DynamoDBClient({ region: 'eu-central-1' });
+const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
+const TABLE_NAME = process.env.TABLE_NAME!;
 
 const bedrock = new BedrockRuntimeClient({ region: 'eu-central-1' });
 const s3 = new S3Client({ region: 'eu-central-1' });
@@ -79,6 +85,7 @@ interface BrainstormEvent {
   prompt: string | null;
   count: number;
   agents: string[];
+  evolveFromIdeaId?: string | null;
 }
 
 interface RawIdea {
@@ -259,6 +266,8 @@ async function updateSessionStatus(
     sessionId,
     userId,
     status,
+    mode: event.evolveFromIdeaId ? 'evolve' : 'new',
+    evolveFromIdeaId: event.evolveFromIdeaId ?? null,
     category: event.category,
     categoryGroup: event.categoryGroup,
     prompt: event.prompt,
@@ -664,12 +673,32 @@ export const handler = async (event: BrainstormEvent) => {
   console.log(`[worker] session=${sessionId} count=${count} category=${category}`);
 
   try {
-    // -------- Stage 0: Retrieve Knowledge Base context --------------------
+    // -------- Stage 0a: Retrieve Knowledge Base context -------------------
     // The Principal Architect sees existing portfolio ideas so the panel
     // does not propose duplicates and can build on prior work.
     const kbSummaries = await getKnowledgeBaseContext(30);
-    const kbContext = formatKbContext(kbSummaries);
+    let kbContext = formatKbContext(kbSummaries);
     console.log(`[worker] injecting ${kbSummaries.length} existing ideas from Knowledge Base into diverge context`);
+
+    // -------- Stage 0b: Evolve mode — seed with an existing idea ----------
+    if (event.evolveFromIdeaId) {
+      try {
+        const { Item } = await ddb.send(new GetCommand({
+          TableName: TABLE_NAME,
+          Key: { PK: `IDEA#${event.evolveFromIdeaId}`, SK: 'METADATA' },
+        }));
+        if (Item) {
+          const e = Item as Record<string, unknown>;
+          const evolveBlock = `\n\nEVOLVE MODE — SEED IDEA TO BUILD UPON:\nName: ${e.name}\nTagline: ${e.tagline}\nCategory: ${e.category}\nProblem: ${e.problem}\nSolution: ${e.solution}\nAWS Services: ${Array.isArray(e.awsServices) ? (e.awsServices as string[]).join(', ') : 'n/a'}\nSAP Modules: ${Array.isArray(e.sapModules) ? (e.sapModules as string[]).join(', ') : 'n/a'}\nArchitecture: ${e.architecture}\n\nTASK: Do NOT re-propose the seed idea verbatim. Instead, generate ${count} EVOLUTIONS of it:\n- Extensions (add a module / scope / capability)\n- Adjacent opportunities (same buyer, different pain)\n- Alternative architectures (same outcome, different stack)\n- Vertical specializations (same idea, tuned for one industry)\n- Pivots (if the seed has a fatal flaw, suggest a reframing)\nEach new idea must be clearly distinct from the seed but explicitly reference it in the panelNotes.\n`;
+          kbContext += evolveBlock;
+          console.log(`[worker] EVOLVE mode: seeded from idea ${event.evolveFromIdeaId} (${e.name})`);
+        } else {
+          console.warn(`[worker] evolveFromIdeaId ${event.evolveFromIdeaId} not found in DDB, falling back to normal mode`);
+        }
+      } catch (err) {
+        console.error('[worker] evolve seed lookup failed, continuing in normal mode', err);
+      }
+    }
 
     // -------- Stage 1: Diverge --------------------------------------------
     await updateSessionStatus(sessionId, userId, event, 'diverging', {

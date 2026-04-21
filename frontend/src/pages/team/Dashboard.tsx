@@ -8,6 +8,7 @@ import {
   FileSpreadsheet,
   ArrowRight,
   Loader2,
+  Brain,
 } from 'lucide-react'
 import {
   BarChart,
@@ -26,10 +27,12 @@ import { Button } from '../../components/ui/Button'
 import { useIdeasStore } from '../../stores/ideasStore'
 import { useCustomersStore } from '../../stores/customersStore'
 import { useResultsStore } from '../../stores/resultsStore'
+import { getKnowledgeBaseStats } from '../../api/client'
 
 export default function TeamDashboard() {
   const navigate = useNavigate()
   const [loaded, setLoaded] = useState(false)
+  const [kbStats, setKbStats] = useState<any>(null)
 
   const { ideas, fetchIdeas } = useIdeasStore()
   const { customers, fetchCustomers, loading: customersLoading, error: customersError } = useCustomersStore()
@@ -44,6 +47,9 @@ export default function TeamDashboard() {
         fetchIdeas(),
         fetchCustomers(),
         fetchAll(),
+        getKnowledgeBaseStats()
+          .then((stats) => setKbStats(stats))
+          .catch(() => setKbStats(null)),
       ])
       setLoaded(true)
     }
@@ -56,6 +62,11 @@ export default function TeamDashboard() {
       fetchIdeas()
       fetchCustomers()
       fetchAll()
+      getKnowledgeBaseStats()
+        .then((stats) => setKbStats(stats))
+        .catch(() => {
+          // Keep previous KB stats on transient error
+        })
     }, 30_000)
     return () => clearInterval(interval)
   }, [fetchIdeas, fetchCustomers, fetchAll])
@@ -228,6 +239,74 @@ export default function TeamDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Knowledge Base card */}
+        {kbStats && (
+          <Card className="mb-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-text flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-accent" />
+                  Knowledge Base
+                </h3>
+                <p className="text-xs text-text-muted mt-1">
+                  Ideas saved for future brainstorm context
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-semibold text-text">{kbStats.totalIdeas}</div>
+                <p className="text-xs text-text-muted">total ideas</p>
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div>
+                <div className="text-lg font-semibold text-success">+{kbStats.last7d}</div>
+                <p className="text-xs text-text-muted">last 7 days</p>
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-accent">+{kbStats.last30d}</div>
+                <p className="text-xs text-text-muted">last 30 days</p>
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-warning">{kbStats.customIdeasCount}</div>
+                <p className="text-xs text-text-muted">customer ideas</p>
+              </div>
+            </div>
+
+            {/* Category breakdown */}
+            {kbStats.categoryBreakdown && kbStats.categoryBreakdown.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-text-muted mb-2">By category</p>
+                <div className="flex flex-wrap gap-2">
+                  {kbStats.categoryBreakdown.slice(0, 6).map((c: any) => (
+                    <span key={c.category} className="px-2 py-1 rounded-lg bg-surface-2/60 border border-border text-xs">
+                      <span className="text-text">{c.category}</span>
+                      <span className="text-text-muted ml-1.5">{c.count}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent additions */}
+            {kbStats.recent && kbStats.recent.length > 0 && (
+              <div>
+                <p className="text-xs text-text-muted mb-2">Most recent</p>
+                <ul className="space-y-1">
+                  {kbStats.recent.slice(0, 3).map((r: any) => (
+                    <li key={r.id} className="text-xs text-text-secondary flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-accent/60" />
+                      <span className="font-medium text-text">{r.name}</span>
+                      <span className="text-text-muted">{'\u00B7'} {r.category}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Card>
+        )}
 
         {/* Chart */}
         <Card className={`mb-8 transition-all duration-700 delay-200 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>

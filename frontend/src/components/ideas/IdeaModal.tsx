@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   X,
   Check,
@@ -18,6 +19,7 @@ import {
   Download,
   FileText,
   Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -98,6 +100,13 @@ export function IdeaModal({
     expiresAt: string
   } | null>(null)
   const { addToast } = useUiStore()
+  const navigate = useNavigate()
+
+  const handleEvolveIdea = () => {
+    if (!idea) return
+    onClose()
+    navigate(`/team/brainstorm?evolve=${idea.id}`)
+  }
 
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
@@ -252,6 +261,7 @@ export function IdeaModal({
               isGenerating={isGenerating}
               result={buildKitResult}
               onGenerate={handleGenerateBuildKit}
+              onEvolve={handleEvolveIdea}
             />
           )}
         </div>
@@ -663,11 +673,13 @@ function BuildKitTab({
   isGenerating,
   result,
   onGenerate,
+  onEvolve,
 }: {
   idea: Idea
   isGenerating: boolean
   result: { files: string[]; presignedUrl: string; expiresAt: string } | null
   onGenerate: () => void
+  onEvolve: () => void
 }) {
   const defaultFiles = [
     'README.md',
@@ -735,6 +747,24 @@ function BuildKitTab({
         >
           {isGenerating ? 'Generating build kit...' : 'Generate Build Kit'}
         </Button>
+
+        {/* Evolve this idea */}
+        <div className="w-full max-w-md pt-2 mt-2 border-t border-border">
+          <p className="text-xs text-text-muted text-center mb-3 leading-relaxed">
+            Start a new brainstorm session that builds on this idea — the panel
+            will propose extensions, adjacent opportunities, and pivots.
+          </p>
+          <div className="flex justify-center">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={onEvolve}
+              icon={<Sparkles className="w-4 h-4" />}
+            >
+              Evolve with Advisory Panel
+            </Button>
+          </div>
+        </div>
 
         {result && (
           <div className="flex flex-col items-center gap-2 mt-2 p-3 rounded-xl bg-success/5 border border-success/15">

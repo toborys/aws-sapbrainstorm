@@ -130,7 +130,7 @@ export function resendInvite(userId: string) {
 }
 
 // Brainstorm
-export function startBrainstorm(data: BrainstormRequest) {
+export function startBrainstorm(data: BrainstormRequest & { evolveFromIdeaId?: string }) {
   return request<{ sessionId: string; status: string }>('/api/brainstorm/generate', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -153,6 +153,19 @@ export const brainstormIdeas = startBrainstorm
 
 export function getBrainstormHistory() {
   return request<Array<{ key: string; lastModified: string }>>('/api/brainstorm/history')
+}
+
+export function getKnowledgeBaseStats() {
+  return request<{
+    totalIdeas: number;
+    scanned: number;
+    customIdeasCount: number;
+    categoryBreakdown: Array<{ category: string; count: number }>;
+    last7d: number;
+    last30d: number;
+    recent: Array<{ id: string; name: string; category: string; savedAt?: string }>;
+    generatedAt: string;
+  }>('/api/knowledge-base/stats')
 }
 
 export function generateBuildKit(ideaId: string) {
