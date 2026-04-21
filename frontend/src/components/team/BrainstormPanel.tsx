@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
   Sparkles,
   Brain,
@@ -28,7 +28,8 @@ import { Card } from '../ui/Card'
 import { Textarea } from '../ui/Textarea'
 import { useIdeasStore } from '../../stores/ideasStore'
 import { useUiStore } from '../../stores/uiStore'
-import { startBrainstorm, getBrainstormStatus, createIdea } from '../../api/client'
+import { startBrainstorm, getBrainstormStatus, createIdea, DuplicateIdeaError } from '../../api/client'
+import { DuplicateWarningDialog } from '../ideas/DuplicateWarningDialog'
 import { BRAINSTORM_AGENTS } from '../../config/agents'
 import type { GeneratedIdea } from '../../types/agents'
 import type { IdeaCategory } from '../../types'
@@ -101,6 +102,18 @@ interface SessionHistoryItem {
 export default function BrainstormPanel() {
   const { ideas, fetchIdeas } = useIdeasStore()
   const { addToast } = useUiStore()
+  const navigate = useNavigate()
+
+  // Dedupe warning dialog state. `pending` holds the idea the user tried to
+  // save that triggered the 409 — when they click "Save anyway" we retry
+  // with force=true.
+  const [duplicatePrompt, setDuplicatePrompt] = useState<{
+    idea: GeneratedIdea
+    idx: number
+    existing: { id: string; name: string; tagline: string }
+    similarity: number
+  } | null>(null)
+  const [forceSaving, setForceSaving] = useState(false)
 
   // Evolve-from-idea query param support
   const [searchParams] = useSearchParams()
@@ -410,27 +423,65 @@ export default function BrainstormPanel() {
 
   // ------ Idea actions ------
 
+  const buildIdeaPayload = (idea: GeneratedIdea, extraOrder = 0) => ({
+    // Spread the whole generated idea — preserves championedBy, challengedBy,
+    // panelNotes, categoryType, categoryGroup, targetBuyer, customerPerspective,
+    // differentiator, awsServices, architectureDiagram, sapModules, costEstimate
+    ...idea,
+    category: (idea.category as IdeaCategory) || 'Cloud & Infrastructure',
+    status: 'active' as const,
+    order: ideas.length + 1 + extraOrder,
+    sourceSessionId: brainstormResult?.sessionId,
+  })
+
   const handleAddIdea = async (idea: GeneratedIdea, idx: number) => {
     const key = `idea-${idx}`
     setAddingIdea(key)
     try {
-      await createIdea({
-        // Spread the whole generated idea — preserves championedBy, challengedBy,
-        // panelNotes, categoryType, categoryGroup, targetBuyer, customerPerspective,
-        // differentiator, awsServices, architectureDiagram, sapModules, costEstimate
-        ...idea,
-        category: (idea.category as IdeaCategory) || 'Cloud & Infrastructure',
-        status: 'active',
-        order: ideas.length + 1,
-        sourceSessionId: brainstormResult?.sessionId,
-      })
+      await createIdea(buildIdeaPayload(idea))
       addToast({ type: 'success', message: `Added "${idea.name}" to portfolio` })
       fetchIdeas()
     } catch (err) {
-      addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
+      if (err instanceof DuplicateIdeaError) {
+        // Surface the dialog instead of a toast — the user gets to decide.
+        setDuplicatePrompt({
+          idea,
+          idx,
+          existing: err.existingIdea,
+          similarity: err.similarity,
+        })
+      } else {
+        addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
+      }
     } finally {
       setAddingIdea(null)
     }
+  }
+
+  const handleDuplicateProceed = async () => {
+    if (!duplicatePrompt) return
+    setForceSaving(true)
+    try {
+      await createIdea(buildIdeaPayload(duplicatePrompt.idea), true)
+      addToast({
+        type: 'success',
+        message: `Added "${duplicatePrompt.idea.name}" to portfolio`,
+      })
+      fetchIdeas()
+      setDuplicatePrompt(null)
+    } catch (err) {
+      addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
+    } finally {
+      setForceSaving(false)
+    }
+  }
+
+  const handleDuplicateViewExisting = (_ideaId: string) => {
+    // Close the dialog and navigate to the portfolio listing. We don't
+    // deep-link to a single idea because the list page doesn't have that
+    // concept yet — the user lands on the list and can find it manually.
+    setDuplicatePrompt(null)
+    navigate('/team/ideas')
   }
 
   const handleRemoveIdea = (idx: number) => {
@@ -445,26 +496,30 @@ export default function BrainstormPanel() {
     if (!brainstormResult || addingAll) return
     setAddingAll(true)
     let count = 0
+    let skipped = 0
     try {
       for (let i = 0; i < brainstormResult.ideas.length; i++) {
         const idea = brainstormResult.ideas[i]
         try {
-          await createIdea({
-            // Spread entire generated idea — retain all extended fields
-            ...idea,
-            category: (idea.category as IdeaCategory) || 'Cloud & Infrastructure',
-            status: 'active',
-            order: ideas.length + i + 1,
-            sourceSessionId: brainstormResult.sessionId,
-          })
+          await createIdea(buildIdeaPayload(idea, i))
           count++
-        } catch {
+        } catch (err) {
+          // Silently skip duplicates during bulk add (popping a modal per
+          // idea would be awful UX). Report the aggregate count in the
+          // toast at the end.
+          if (err instanceof DuplicateIdeaError) {
+            skipped++
+          }
           // Continue adding remaining ideas
         }
       }
       // Fetch ideas once at the end
       await fetchIdeas()
-      addToast({ type: 'success', message: `Added ${count} recommendations to portfolio` })
+      const suffix = skipped > 0 ? ` (${skipped} skipped as duplicates)` : ''
+      addToast({
+        type: 'success',
+        message: `Added ${count} recommendations to portfolio${suffix}`,
+      })
     } catch (err) {
       addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
     } finally {
@@ -1336,6 +1391,23 @@ export default function BrainstormPanel() {
           </div>
         )}
       </div>
+
+      {/* Duplicate-idea warning dialog. Rendered at the shell level so it
+          layers above the results grid when a 409 comes back. */}
+      {duplicatePrompt && (
+        <DuplicateWarningDialog
+          isOpen
+          onClose={() => {
+            if (forceSaving) return
+            setDuplicatePrompt(null)
+          }}
+          existingIdea={duplicatePrompt.existing}
+          similarity={duplicatePrompt.similarity}
+          onProceed={handleDuplicateProceed}
+          onViewExisting={handleDuplicateViewExisting}
+          saving={forceSaving}
+        />
+      )}
     </AppShell>
   )
 }

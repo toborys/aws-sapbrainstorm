@@ -38,6 +38,10 @@ export function notFound(message = 'Not found') {
   return jsonResponse(404, { error: message });
 }
 
+export function conflict(body: unknown) {
+  return jsonResponse(409, body);
+}
+
 export function serverError(message = 'Internal server error') {
   return jsonResponse(500, { error: message });
 }

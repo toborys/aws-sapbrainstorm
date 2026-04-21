@@ -43,7 +43,8 @@ import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import { useIdeasStore } from '../../stores/ideasStore'
 import { useUiStore } from '../../stores/uiStore'
-import { createIdea, updateIdea, reorderIdeas, generateBuildKit } from '../../api/client'
+import { createIdea, updateIdea, reorderIdeas, generateBuildKit, DuplicateIdeaError } from '../../api/client'
+import { DuplicateWarningDialog } from '../../components/ideas/DuplicateWarningDialog'
 import type { Idea, IdeaCategory } from '../../types'
 
 const CATEGORIES: IdeaCategory[] = [
@@ -330,6 +331,15 @@ export default function TeamIdeas() {
   const [_saving, setSaving] = useState(false)
   const [isGeneratingBuildKit, setIsGeneratingBuildKit] = useState<string | null>(null)
 
+  // Dedupe warning state for the manual add flow. When the backend flags a
+  // 409 we surface the existing idea; if the user confirms we retry with
+  // `force=true`.
+  const [duplicatePrompt, setDuplicatePrompt] = useState<{
+    existing: { id: string; name: string; tagline: string }
+    similarity: number
+  } | null>(null)
+  const [forceSaving, setForceSaving] = useState(false)
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -432,29 +442,52 @@ export default function TeamIdeas() {
     }
   }
 
-  const handleAddIdea = async () => {
+  const buildManualPayload = () => ({
+    name: newName,
+    tagline: newTagline,
+    category: newCategory,
+    problem: newProblem,
+    solution: newSolution,
+    status: 'active' as const,
+    order: ideas.length + 1,
+  })
+
+  const resetManualForm = () => {
+    setShowAddModal(false)
+    setNewName('')
+    setNewTagline('')
+    setNewProblem('')
+    setNewSolution('')
+  }
+
+  const handleAddIdea = async (force = false) => {
     setSaving(true)
     try {
-      await createIdea({
-        name: newName,
-        tagline: newTagline,
-        category: newCategory,
-        problem: newProblem,
-        solution: newSolution,
-        status: 'active',
-        order: ideas.length + 1,
-      })
+      await createIdea(buildManualPayload(), force)
       addToast({ type: 'success', message: `Added "${newName}"` })
-      setShowAddModal(false)
-      setNewName('')
-      setNewTagline('')
-      setNewProblem('')
-      setNewSolution('')
+      resetManualForm()
+      setDuplicatePrompt(null)
       fetchIdeas()
     } catch (err) {
-      addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
+      if (err instanceof DuplicateIdeaError) {
+        setDuplicatePrompt({
+          existing: err.existingIdea,
+          similarity: err.similarity,
+        })
+      } else {
+        addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
+      }
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDuplicateProceed = async () => {
+    setForceSaving(true)
+    try {
+      await handleAddIdea(true)
+    } finally {
+      setForceSaving(false)
     }
   }
 
@@ -714,12 +747,36 @@ export default function TeamIdeas() {
             <Button variant="secondary" onClick={() => setShowAddModal(false)}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleAddIdea} disabled={!newName}>
+            <Button variant="primary" onClick={() => handleAddIdea()} disabled={!newName}>
               Add
             </Button>
           </div>
         </div>
       </Modal>
+
+      {/* Dedupe warning — shown when backend returns 409 for the manual
+          Add flow. Proceed retries with force=true; View jumps to /team/ideas
+          (i.e. stays here, just scrolls to top). */}
+      {duplicatePrompt && (
+        <DuplicateWarningDialog
+          isOpen
+          onClose={() => {
+            if (forceSaving) return
+            setDuplicatePrompt(null)
+          }}
+          existingIdea={duplicatePrompt.existing}
+          similarity={duplicatePrompt.similarity}
+          onProceed={handleDuplicateProceed}
+          onViewExisting={(_id) => {
+            setDuplicatePrompt(null)
+            setShowAddModal(false)
+            // Already on /team/ideas — just scroll to top as a cue that
+            // the existing idea is in the current list.
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+          saving={forceSaving}
+        />
+      )}
     </AppShell>
   )
 }

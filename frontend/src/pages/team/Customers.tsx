@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   UserPlus,
   Upload,
@@ -10,6 +10,10 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  FileDown,
+  Copy,
+  AlertCircle,
+  X,
 } from 'lucide-react'
 import { AppShell } from '../../components/layout/AppShell'
 import { TopNav } from '../../components/layout/TopNav'
@@ -19,7 +23,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
-import { inviteCustomer } from '../../api/client'
+import { inviteCustomer, bulkInviteCustomers, type BulkInviteResult } from '../../api/client'
 import { useCustomersStore } from '../../stores/customersStore'
 import { useUiStore } from '../../stores/uiStore'
 import type { UserProfile } from '../../types'
@@ -38,6 +42,75 @@ const statusConfig = {
   voted: { label: 'Voted', variant: 'success' as const, icon: CheckCircle },
 }
 
+interface ParsedRow {
+  email: string
+  company: string
+  votingDeadline?: string
+  valid: boolean
+  reason?: string
+}
+
+// Inline CSV parser — no external dep. Handles simple comma-separated rows with optional
+// double-quoted fields; detects an optional header row whose first line mentions "email".
+function parseCsv(text: string): ParsedRow[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+  if (lines.length === 0) return []
+
+  let startIdx = 0
+  if (/email/i.test(lines[0])) startIdx = 1
+
+  const rows: ParsedRow[] = []
+  for (let i = startIdx; i < lines.length; i++) {
+    const cols = lines[i].split(',').map((c) => c.trim().replace(/^"|"$/g, ''))
+    const [email = '', company = '', votingDeadline = ''] = cols
+    const trimmedEmail = email.trim().toLowerCase()
+    const trimmedCompany = company.trim()
+    const trimmedDeadline = votingDeadline.trim()
+
+    let valid = true
+    let reason: string | undefined
+    if (!trimmedEmail || !trimmedCompany) {
+      valid = false
+      reason = 'email and company required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      valid = false
+      reason = 'invalid email format'
+    } else if (trimmedDeadline && !/^\d{4}-\d{2}-\d{2}$/.test(trimmedDeadline)) {
+      valid = false
+      reason = 'deadline must be YYYY-MM-DD'
+    }
+
+    rows.push({
+      email: trimmedEmail,
+      company: trimmedCompany,
+      votingDeadline: trimmedDeadline || undefined,
+      valid,
+      reason,
+    })
+  }
+  return rows
+}
+
+const SAMPLE_CSV = `email,company,votingDeadline
+alice@acme.com,Acme Corp,2026-05-15
+bob@foo.com,Foo Inc,
+`
+
+function downloadFile(filename: string, content: string, mime = 'text/csv') {
+  const blob = new Blob([content], { type: `${mime};charset=utf-8` })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export default function TeamCustomers() {
   const { customers, loading, error, fetchCustomers } = useCustomersStore()
   const addToast = useUiStore((s) => s.addToast)
@@ -52,6 +125,13 @@ export default function TeamCustomers() {
   const [inviteDeadline, setInviteDeadline] = useState('')
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<'all' | CustomerStatus>('all')
+
+  // Bulk import state
+  const [parsedRows, setParsedRows] = useState<ParsedRow[]>([])
+  const [fileName, setFileName] = useState<string>('')
+  const [bulkSending, setBulkSending] = useState(false)
+  const [bulkResult, setBulkResult] = useState<BulkInviteResult | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchCustomers()
@@ -79,7 +159,6 @@ export default function TeamCustomers() {
       setInviteCompany('')
       setInviteDeadline('')
       addToast({ type: 'success', message: 'Invitation sent successfully' })
-      // Refresh customer list
       await fetchCustomers()
     } catch (err) {
       addToast({ type: 'error', message: `Error: ${(err as Error).message}` })
@@ -92,9 +171,99 @@ export default function TeamCustomers() {
     addToast({ type: 'info', message: 'Resend invitations: Coming soon' })
   }
 
-  const handleBulkImport = () => {
+  const resetBulkState = () => {
+    setParsedRows([])
+    setFileName('')
+    setBulkResult(null)
+    setBulkSending(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleCloseBulk = () => {
+    const hadResult = bulkResult && bulkResult.invitedCount > 0
     setShowBulkModal(false)
-    addToast({ type: 'info', message: 'Bulk import: Coming soon' })
+    resetBulkState()
+    if (hadResult) void fetchCustomers()
+  }
+
+  const handleFileSelected = async (file: File) => {
+    setBulkResult(null)
+    setFileName(file.name)
+    try {
+      const text = await file.text()
+      const rows = parseCsv(text)
+      if (rows.length === 0) {
+        addToast({ type: 'error', message: 'CSV file is empty or unreadable' })
+        setParsedRows([])
+        return
+      }
+      setParsedRows(rows)
+    } catch (err) {
+      addToast({ type: 'error', message: `Failed to read CSV: ${(err as Error).message}` })
+    }
+  }
+
+  const handleSendBulk = async () => {
+    const valid = parsedRows.filter((r) => r.valid)
+    if (valid.length === 0) {
+      addToast({ type: 'error', message: 'No valid rows to invite' })
+      return
+    }
+    setBulkSending(true)
+    try {
+      const result = await bulkInviteCustomers(
+        valid.map((r) => ({
+          email: r.email,
+          company: r.company,
+          votingDeadline: r.votingDeadline,
+        })),
+      )
+      setBulkResult(result)
+      if (result.invitedCount > 0) {
+        addToast({
+          type: 'success',
+          message: `Invited ${result.invitedCount} of ${result.total} customers`,
+        })
+      }
+      if (result.failedCount > 0) {
+        addToast({
+          type: result.invitedCount > 0 ? 'info' : 'error',
+          message: `${result.failedCount} invite(s) failed`,
+        })
+      }
+    } catch (err) {
+      addToast({ type: 'error', message: `Bulk invite failed: ${(err as Error).message}` })
+    } finally {
+      setBulkSending(false)
+    }
+  }
+
+  const credentialsCsv = () => {
+    if (!bulkResult) return ''
+    const header = 'email,tempPassword\n'
+    const body = bulkResult.invited.map((i) => `${i.email},${i.tempPassword}`).join('\n')
+    return header + body + '\n'
+  }
+
+  const handleCopyCredentials = async () => {
+    if (!bulkResult || bulkResult.invited.length === 0) return
+    const lines = bulkResult.invited.map((i) => `${i.email},${i.tempPassword}`).join('\n')
+    try {
+      await navigator.clipboard.writeText(lines)
+      addToast({ type: 'success', message: 'Credentials copied to clipboard' })
+    } catch {
+      addToast({ type: 'error', message: 'Clipboard copy blocked — use Download instead' })
+    }
+  }
+
+  const handleDownloadCredentials = () => {
+    if (!bulkResult || bulkResult.invited.length === 0) return
+    const stamp = new Date().toISOString().slice(0, 10)
+    downloadFile(`apx-invited-customers-${stamp}.csv`, credentialsCsv())
+  }
+
+  const handleDownloadTemplate = () => {
+    downloadFile('apx-customers-template.csv', SAMPLE_CSV)
   }
 
   const stats = {
@@ -103,6 +272,9 @@ export default function TeamCustomers() {
     active: customers.filter((c) => deriveStatus(c) === 'active').length,
     voted: customers.filter((c) => deriveStatus(c) === 'voted').length,
   }
+
+  const validCount = parsedRows.filter((r) => r.valid).length
+  const invalidCount = parsedRows.length - validCount
 
   if (loading && customers.length === 0) {
     return (
@@ -351,42 +523,222 @@ export default function TeamCustomers() {
       {/* Bulk invite modal */}
       <Modal
         isOpen={showBulkModal}
-        onClose={() => setShowBulkModal(false)}
+        onClose={handleCloseBulk}
         title="Bulk Customer Import"
+        size="xl"
       >
-        <div className="space-y-4">
-          <p className="text-sm text-text-muted">
-            Prepare a CSV file with columns: email, company, deadline (YYYY-MM-DD).
-          </p>
-          <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/30 transition-colors">
-            <Upload className="w-8 h-8 mx-auto mb-3 text-text-muted" />
-            <p className="text-sm text-text-muted mb-2">
-              Drag a CSV file or click to select
-            </p>
-            <input
-              type="file"
-              accept=".csv"
-              className="hidden"
-              id="csv-upload"
-              onChange={() => {
-                // TODO: parse CSV
-              }}
-            />
-            <label htmlFor="csv-upload">
-              <Button variant="secondary" size="sm" onClick={() => document.getElementById('csv-upload')?.click()}>
-                Choose file
+        {!bulkResult ? (
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-sm text-text-muted">
+                Upload a CSV with columns: <code className="text-text">email, company, votingDeadline</code> (YYYY-MM-DD, optional). Header row is auto-detected. Maximum 100 rows per batch.
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<FileDown className="w-4 h-4" />}
+                onClick={handleDownloadTemplate}
+              >
+                Download template
               </Button>
-            </label>
+            </div>
+
+            <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/30 transition-colors">
+              <Upload className="w-8 h-8 mx-auto mb-3 text-text-muted" />
+              <p className="text-sm text-text-muted mb-2">
+                {fileName ? `Selected: ${fileName}` : 'Choose a CSV file to preview'}
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                id="csv-upload"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void handleFileSelected(f)
+                }}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {fileName ? 'Choose different file' : 'Choose file'}
+              </Button>
+            </div>
+
+            {parsedRows.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-text">
+                    {parsedRows.length} row(s) parsed
+                  </span>
+                  <span className="text-success">{validCount} valid</span>
+                  {invalidCount > 0 && (
+                    <span className="text-error">{invalidCount} invalid</span>
+                  )}
+                </div>
+
+                <div className="max-h-80 overflow-y-auto border border-border rounded-xl">
+                  <table className="w-full text-sm">
+                    <thead className="bg-surface-2 sticky top-0">
+                      <tr>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-text-muted uppercase">#</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-text-muted uppercase">Email</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-text-muted uppercase">Company</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-text-muted uppercase">Deadline</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-text-muted uppercase">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedRows.map((row, idx) => (
+                        <tr
+                          key={idx}
+                          className={`border-t border-border ${row.valid ? '' : 'bg-error/5'}`}
+                        >
+                          <td className="px-3 py-2 text-text-muted">{idx + 1}</td>
+                          <td className={`px-3 py-2 ${row.valid ? 'text-text' : 'text-error'}`}>
+                            {row.email || <span className="italic opacity-60">(empty)</span>}
+                          </td>
+                          <td className={`px-3 py-2 ${row.valid ? 'text-text' : 'text-error'}`}>
+                            {row.company || <span className="italic opacity-60">(empty)</span>}
+                          </td>
+                          <td className="px-3 py-2 text-text-muted">{row.votingDeadline || '-'}</td>
+                          <td className="px-3 py-2">
+                            {row.valid ? (
+                              <span className="inline-flex items-center gap-1 text-success text-xs">
+                                <CheckCircle className="w-3.5 h-3.5" /> OK
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-error text-xs">
+                                <AlertCircle className="w-3.5 h-3.5" /> {row.reason}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="secondary" onClick={handleCloseBulk}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSendBulk}
+                disabled={validCount === 0 || bulkSending}
+              >
+                {bulkSending
+                  ? `Sending ${validCount}...`
+                  : `Send ${validCount} invite${validCount === 1 ? '' : 's'}`}
+              </Button>
+            </div>
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setShowBulkModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleBulkImport}>
-              Import
-            </Button>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="glass rounded-xl p-4">
+                <p className="text-xs text-text-muted mb-1">Total</p>
+                <p className="text-2xl font-semibold text-text">{bulkResult.total}</p>
+              </div>
+              <div className="glass rounded-xl p-4">
+                <p className="text-xs text-text-muted mb-1">Invited</p>
+                <p className="text-2xl font-semibold text-success">{bulkResult.invitedCount}</p>
+              </div>
+              <div className="glass rounded-xl p-4">
+                <p className="text-xs text-text-muted mb-1">Failed</p>
+                <p className="text-2xl font-semibold text-error">{bulkResult.failedCount}</p>
+              </div>
+            </div>
+
+            {bulkResult.invited.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-text">Temporary credentials</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={<Copy className="w-3.5 h-3.5" />}
+                      onClick={handleCopyCredentials}
+                    >
+                      Copy
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={<FileDown className="w-3.5 h-3.5" />}
+                      onClick={handleDownloadCredentials}
+                    >
+                      Download CSV
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-text-muted">
+                  Share these passwords securely. They are not stored server-side and cannot be retrieved later.
+                </p>
+                <div className="max-h-60 overflow-y-auto border border-border rounded-xl">
+                  <table className="w-full text-sm font-mono">
+                    <thead className="bg-surface-2 sticky top-0">
+                      <tr>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-text-muted uppercase">Email</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-text-muted uppercase">Temp Password</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkResult.invited.map((row, idx) => (
+                        <tr key={idx} className="border-t border-border">
+                          <td className="px-3 py-2 text-text">{row.email}</td>
+                          <td className="px-3 py-2 text-text">{row.tempPassword}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {bulkResult.failed.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-error flex items-center gap-2">
+                  <X className="w-4 h-4" /> Failed rows
+                </h3>
+                <div className="max-h-60 overflow-y-auto border border-error/30 rounded-xl">
+                  <table className="w-full text-sm">
+                    <thead className="bg-error/10 sticky top-0">
+                      <tr>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-error uppercase">Email</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-error uppercase">Error</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkResult.failed.map((row, idx) => (
+                        <tr key={idx} className="border-t border-error/20">
+                          <td className="px-3 py-2 text-text">{row.email}</td>
+                          <td className="px-3 py-2 text-error">{row.error}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="secondary" onClick={resetBulkState}>
+                Upload another
+              </Button>
+              <Button variant="primary" onClick={handleCloseBulk}>
+                Close
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
     </AppShell>
   )

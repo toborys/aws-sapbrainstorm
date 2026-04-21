@@ -196,8 +196,18 @@ export class SapInnovationStack extends cdk.Stack {
     // Ideas API
     const ideasListFn = createLambda('IdeasList', 'dist/handlers/ideas-list.handler');
     const ideasGetFn = createLambda('IdeasGet', 'dist/handlers/ideas-get.handler');
-    const ideasCreateFn = createLambda('IdeasCreate', 'dist/handlers/ideas-create.handler');
+    // IdeasCreate now generates a Titan embedding + scans existing ideas
+    // for duplicates — needs more memory and a longer timeout than the
+    // default 256MB/10s.
+    const ideasCreateFn = createLambda('IdeasCreate', 'dist/handlers/ideas-create.handler', {
+      memory: 512,
+      timeout: 30,
+    });
     dataBucket.grantReadWrite(ideasCreateFn); // Knowledge Base mirror
+    ideasCreateFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel'],
+      resources: ['*'],
+    }));
     const ideasUpdateFn = createLambda('IdeasUpdate', 'dist/handlers/ideas-update.handler');
     const ideasDeleteFn = createLambda('IdeasDelete', 'dist/handlers/ideas-delete.handler');
     const ideasReorderFn = createLambda('IdeasReorder', 'dist/handlers/ideas-reorder.handler');
@@ -207,6 +217,18 @@ export class SapInnovationStack extends cdk.Stack {
     });
     dataBucket.grantReadWrite(ideasBuildKitFn);
     table.grantReadData(ideasBuildKitFn);
+
+    // One-shot backfill for existing ideas without embeddings. Bedrock is
+    // throttled per-account so we keep this on a longer timeout.
+    const ideasBackfillEmbeddingsFn = createLambda(
+      'IdeasBackfillEmbeddings',
+      'dist/handlers/ideas-backfill-embeddings.handler',
+      { memory: 512, timeout: 300 },
+    );
+    ideasBackfillEmbeddingsFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel'],
+      resources: ['*'],
+    }));
 
     // Voting API
     const votesMyFn = createLambda('VotesMy', 'dist/handlers/votes-my.handler');
@@ -262,6 +284,15 @@ export class SapInnovationStack extends cdk.Stack {
     adminCustomersInviteFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['ses:SendEmail'],
       resources: ['*'],
+    }));
+
+    const adminCustomersInviteBulkFn = createLambda('AdminCustomersInviteBulk', 'dist/handlers/admin-customers-invite-bulk.handler', {
+      memory: 256,
+      timeout: 120, // sequential processing, up to 100 users
+    });
+    adminCustomersInviteBulkFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['cognito-idp:AdminCreateUser', 'cognito-idp:AdminAddUserToGroup'],
+      resources: [customerPool.userPoolArn],
     }));
 
     const adminCustomersUpdateFn = createLambda('AdminCustomersUpdate', 'dist/handlers/admin-customers-update.handler');
@@ -385,6 +416,15 @@ export class SapInnovationStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration('IdeasBuildKitInt', ideasBuildKitFn),
       authorizer: teamAuthorizer,
     });
+    httpApi.addRoutes({
+      path: '/api/ideas/backfill-embeddings',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'IdeasBackfillEmbeddingsInt',
+        ideasBackfillEmbeddingsFn,
+      ),
+      authorizer: teamAuthorizer,
+    });
 
     // Routes — Voting
     httpApi.addRoutes({
@@ -449,6 +489,12 @@ export class SapInnovationStack extends cdk.Stack {
       path: '/api/admin/customers/invite',
       methods: [apigatewayv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration('AdminCustInvInt', adminCustomersInviteFn),
+      authorizer: teamAuthorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/admin/customers/invite/bulk',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration('AdminCustInvBulkInt', adminCustomersInviteBulkFn),
       authorizer: teamAuthorizer,
     });
     httpApi.addRoutes({

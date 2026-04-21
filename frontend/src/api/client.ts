@@ -3,6 +3,28 @@ import type { Idea, VotingSession, CustomIdea, VoteResults, UserProfile, Brainst
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
+/**
+ * Thrown when the API returns 409 with `{ error: 'duplicate', existingIdea,
+ * similarity }` from the idea dedupe flow.
+ *
+ * The frontend catches this to show the DuplicateWarningDialog — any other
+ * 4xx/5xx still falls through to the generic `Error` path.
+ */
+export class DuplicateIdeaError extends Error {
+  public readonly existingIdea: { id: string; name: string; tagline: string }
+  public readonly similarity: number
+
+  constructor(
+    existingIdea: { id: string; name: string; tagline: string },
+    similarity: number,
+  ) {
+    super('Duplicate idea detected')
+    this.name = 'DuplicateIdeaError'
+    this.existingIdea = existingIdea
+    this.similarity = similarity
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = useAuthStore.getState().token
 
@@ -22,7 +44,20 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }))
-    throw new Error(error.message || `Request failed: ${response.status}`)
+    // Special-case: idea dedupe returns a typed 409 so the UI can show a
+    // confirm-and-force dialog instead of a generic error toast.
+    if (
+      response.status === 409 &&
+      error &&
+      error.error === 'duplicate' &&
+      error.existingIdea
+    ) {
+      throw new DuplicateIdeaError(
+        error.existingIdea,
+        Number(error.similarity) || 0,
+      )
+    }
+    throw new Error(error.message || error.error || `Request failed: ${response.status}`)
   }
 
   if (response.status === 204) {
@@ -41,8 +76,9 @@ export function getIdea(id: string) {
   return request<Idea>(`/api/ideas/${id}`)
 }
 
-export function createIdea(data: Partial<Idea>) {
-  return request<Idea>('/api/ideas', {
+export function createIdea(data: Partial<Idea>, force = false) {
+  const url = force ? '/api/ideas?force=true' : '/api/ideas'
+  return request<Idea>(url, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -65,6 +101,17 @@ export function reorderIdeas(orderedIds: string[]) {
   return request<void>('/api/ideas/reorder', {
     method: 'PUT',
     body: JSON.stringify({ orderedIds }),
+  })
+}
+
+export function backfillIdeaEmbeddings() {
+  return request<{
+    total: number
+    backfilled: number
+    alreadyHadEmbedding: number
+    failed: Array<{ id: string; error: string }>
+  }>('/api/ideas/backfill-embeddings', {
+    method: 'POST',
   })
 }
 
@@ -116,8 +163,16 @@ export function inviteCustomer(data: { email: string; company: string; votingDea
   })
 }
 
+export interface BulkInviteResult {
+  total: number
+  invitedCount: number
+  failedCount: number
+  invited: Array<{ email: string; tempPassword: string }>
+  failed: Array<{ email: string; error: string }>
+}
+
 export function bulkInviteCustomers(data: Array<{ email: string; company: string; votingDeadline?: string }>) {
-  return request<UserProfile[]>('/api/admin/customers/invite/bulk', {
+  return request<BulkInviteResult>('/api/admin/customers/invite/bulk', {
     method: 'POST',
     body: JSON.stringify({ customers: data }),
   })
