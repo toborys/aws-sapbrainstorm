@@ -67,16 +67,8 @@ type ViewMode = 'config' | 'generating' | 'results'
 // Agent group labels
 const AGENT_GROUPS: { label: string; ids: string[] }[] = [
   {
-    label: 'Strategy & Business',
-    ids: ['ceo-visionary', 'head-of-sales', 'product-strategist', 'devils-advocate'],
-  },
-  {
-    label: 'Technology',
-    ids: ['sap-architect', 'aws-architect', 'infra-expert', 'genai-aws', 'ai-onprem'],
-  },
-  {
-    label: 'Customer & Market',
-    ids: ['sap-customer', 'security-expert', 'growth-hacker'],
+    label: 'Advisory Panel',
+    ids: ['principal-architect', 'product-owner', 'devils-advocate'],
   },
 ]
 
@@ -110,17 +102,24 @@ export default function BrainstormPanel() {
   const { addToast } = useUiStore()
 
   // Agent selection — persisted to localStorage
+  // Panel is the same 3-expert advisory panel; default is all selected
+  const VALID_AGENT_IDS = new Set(BRAINSTORM_AGENTS.map((a) => a.id))
+  const DEFAULT_AGENTS = BRAINSTORM_AGENTS.map((a) => a.id)
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem('brainstorm-selected-agents')
       if (saved) {
         const arr = JSON.parse(saved) as string[]
-        if (Array.isArray(arr) && arr.length > 0) return new Set(arr)
+        if (Array.isArray(arr)) {
+          // Filter out any stale IDs from previous 12-agent config
+          const valid = arr.filter((id) => VALID_AGENT_IDS.has(id))
+          if (valid.length > 0) return new Set(valid)
+        }
       }
     } catch {
       // Ignore
     }
-    return new Set(['sap-architect', 'product-strategist', 'sap-customer'])
+    return new Set(DEFAULT_AGENTS)
   })
 
   // Config
@@ -670,7 +669,7 @@ export default function BrainstormPanel() {
                 Start Strategic Analysis
                 {selectedAgents.size < 3 && (
                   <span className="text-sm font-normal opacity-75 ml-2">
-                    (min. 3 experts)
+                    (all 3 experts required)
                   </span>
                 )}
               </button>
