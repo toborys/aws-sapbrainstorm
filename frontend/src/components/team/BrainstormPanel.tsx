@@ -156,6 +156,10 @@ export default function BrainstormPanel() {
   const [litAgentIdx, setLitAgentIdx] = useState(0)
   const litInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Stage progress (from backend status endpoint during generation)
+  const [currentStage, setCurrentStage] = useState<string>('')
+  const [kbContextCount, setKbContextCount] = useState<number>(0)
+
   // Expanded idea cards
   const [expandedProblems, setExpandedProblems] = useState<Set<number>>(new Set())
   const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set())
@@ -255,6 +259,8 @@ export default function BrainstormPanel() {
     setViewMode('generating')
     setBrainstormResult(null)
     setLitAgentIdx(0)
+    setCurrentStage('')
+    setKbContextCount(0)
 
     // Start the sequential light-up animation
     const agentIds = Array.from(selectedAgents)
@@ -288,6 +294,10 @@ export default function BrainstormPanel() {
 
         try {
           const status = await getBrainstormStatus(sessionId)
+          // Update progress state for UI
+          const s = status as typeof status & { stage?: string; kbContextCount?: number }
+          if (s.stage) setCurrentStage(s.stage)
+          if (typeof s.kbContextCount === 'number') setKbContextCount(s.kbContextCount)
           if (status.status === 'complete') {
             sessionData = status
             break
@@ -656,6 +666,9 @@ export default function BrainstormPanel() {
                   </span>
                 )}
               </button>
+              <p className="text-xs text-text-muted text-center mt-3">
+                The panel will consult the Knowledge Base to avoid duplicating existing portfolio ideas.
+              </p>
 
               {/* History section */}
               {sessionHistory.length > 0 && (
@@ -895,8 +908,34 @@ export default function BrainstormPanel() {
               <span className="text-accent font-semibold">{ideaCount}</span> recommendations...
             </p>
 
+            {/* Stage indicator */}
+            {currentStage && (
+              <div className="mt-6 flex items-center gap-2 text-xs">
+                <span className="text-text-muted">Stage:</span>
+                <span className={`px-2 py-0.5 rounded-lg font-medium ${currentStage === 'diverge' ? 'bg-accent/15 text-accent' : 'bg-surface-2 text-text-muted'}`}>
+                  Diverge
+                </span>
+                <span className="text-text-muted/30">→</span>
+                <span className={`px-2 py-0.5 rounded-lg font-medium ${currentStage === 'critique' ? 'bg-accent/15 text-accent' : 'bg-surface-2 text-text-muted'}`}>
+                  Critique
+                </span>
+                <span className="text-text-muted/30">→</span>
+                <span className={`px-2 py-0.5 rounded-lg font-medium ${currentStage === 'converge' ? 'bg-accent/15 text-accent' : 'bg-surface-2 text-text-muted'}`}>
+                  Converge
+                </span>
+              </div>
+            )}
+
+            {/* KB-awareness indicator */}
+            {kbContextCount > 0 && (
+              <p className="text-accent/70 text-xs mt-3 flex items-center gap-1.5">
+                <Brain className="w-3.5 h-3.5" />
+                Panel is consulting {kbContextCount} existing {kbContextCount === 1 ? 'idea' : 'ideas'} from the Knowledge Base
+              </p>
+            )}
+
             <p className="text-text-muted/50 text-xs mt-4">
-              Estimated time: 15-30 seconds
+              Estimated time: 60-90 seconds
             </p>
           </div>
         )}

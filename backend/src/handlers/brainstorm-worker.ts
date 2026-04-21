@@ -18,6 +18,7 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { estimateCost } from '../lib/aws-pricing-static.js';
+import { getKnowledgeBaseContext, formatKbContext } from '../lib/kb-retrieve.js';
 
 const bedrock = new BedrockRuntimeClient({ region: 'eu-central-1' });
 const s3 = new S3Client({ region: 'eu-central-1' });
@@ -293,6 +294,7 @@ async function runDiverge(
   categoryGroup: string,
   userContext: string | null,
   count: number,
+  kbContext: string,
 ): Promise<DivergeOutput> {
   const architect = AGENT_PERSONAS['principal-architect'];
 
@@ -301,7 +303,7 @@ async function runDiverge(
 ${architect.prompt}
 
 ${COMPANY_CONTEXT}
-
+${kbContext}
 You are in the DIVERGE stage of a multi-agent brainstorm. Your job: produce raw candidate ideas that will then be critiqued by a Product Owner and a Devil's Advocate. Favor concreteness over caution — generate more specific, buildable candidates than you think you need. Output valid JSON only.`;
 
   let userPrompt = '';
@@ -662,14 +664,22 @@ export const handler = async (event: BrainstormEvent) => {
   console.log(`[worker] session=${sessionId} count=${count} category=${category}`);
 
   try {
+    // -------- Stage 0: Retrieve Knowledge Base context --------------------
+    // The Principal Architect sees existing portfolio ideas so the panel
+    // does not propose duplicates and can build on prior work.
+    const kbSummaries = await getKnowledgeBaseContext(30);
+    const kbContext = formatKbContext(kbSummaries);
+    console.log(`[worker] injecting ${kbSummaries.length} existing ideas from Knowledge Base into diverge context`);
+
     // -------- Stage 1: Diverge --------------------------------------------
     await updateSessionStatus(sessionId, userId, event, 'diverging', {
       stage: 'diverge',
       completedAgents: [],
       agentCount: 3,
+      kbContextCount: kbSummaries.length,
     });
 
-    const diverge = await runDiverge(category, categoryGroup, prompt, count);
+    const diverge = await runDiverge(category, categoryGroup, prompt, count, kbContext);
 
     // -------- Stage 2: Critique (parallel) --------------------------------
     await updateSessionStatus(sessionId, userId, event, 'critiquing', {
