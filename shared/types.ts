@@ -20,6 +20,25 @@ export interface Idea {
   createdBy: string;
   status: 'active' | 'hidden' | 'archived';
   order: number;
+  // --- Extended fields (optional, added post-scaffold) ---
+  awsServices?: string[];
+  championedBy?: string[];              // agent IDs who championed (real, from diverge stage)
+  challengedBy?: string[];              // agent IDs who raised concerns
+  panelNotes?: string;                  // consolidated panel discussion
+  categoryType?: 'technical' | 'business' | 'sales' | 'operations';
+  categoryGroup?: 'technical' | 'business';
+  targetBuyer?: string;                 // already ad-hoc in handlers, formalize
+  customerPerspective?: string;
+  differentiator?: string;
+  architectureDiagram?: string;         // raw mermaid source (renders in modal)
+  sapModules?: string[];                // ['FI','MM','SD','HANA',...]
+  costEstimate?: {
+    devEur: number;
+    prodEur: number;
+    assumptions: string;
+  };
+  sourceSessionId?: string;             // brainstorm session that produced this idea
+  updatedAt?: string;
 }
 
 export type IdeaCategory =

@@ -11,7 +11,6 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 import * as sns from 'aws-cdk-lib/aws-sns';
@@ -52,13 +51,6 @@ export class SapInnovationStack extends cdk.Stack {
       indexName: 'GSI1',
       partitionKey: { name: 'GSI1PK', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'GSI1SK', type: dynamodb.AttributeType.STRING },
-      projectionType: dynamodb.ProjectionType.ALL,
-    });
-
-    table.addGlobalSecondaryIndex({
-      indexName: 'GSI2',
-      partitionKey: { name: 'GSI2PK', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'GSI2SK', type: dynamodb.AttributeType.STRING },
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
@@ -167,12 +159,6 @@ export class SapInnovationStack extends cdk.Stack {
       autoDeleteObjects: !isProd,
     });
 
-    // ─── 4. Secrets Manager ──────────────────────────────────────────
-    const anthropicSecret = new secretsmanager.Secret(this, 'AnthropicApiKey', {
-      secretName: `AnthropicApiKey-${stageName}`,
-      description: 'Anthropic Claude API key for brainstorm feature',
-    });
-
     // ─── 5. Lambda Functions ─────────────────────────────────────────
     const lambdaEnv: Record<string, string> = {
       TABLE_NAME: table.tableName,
@@ -180,7 +166,6 @@ export class SapInnovationStack extends cdk.Stack {
       TEAM_POOL_ID: teamPool.userPoolId,
       CUSTOMER_CLIENT_ID: customerClient.userPoolClientId,
       TEAM_CLIENT_ID: teamClient.userPoolClientId,
-      ANTHROPIC_SECRET_ARN: anthropicSecret.secretArn,
       DATA_BUCKET: dataBucket.bucketName,
       STAGE: stageName,
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',

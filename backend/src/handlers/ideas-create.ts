@@ -28,7 +28,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     const id = body.id || randomUUID();
     const now = new Date().toISOString();
 
-    const item = {
+    const item: Record<string, unknown> = {
       PK: `IDEA#${id}`,
       SK: 'METADATA',
       GSI1PK: `CATEGORY#${category}`,
@@ -50,14 +50,29 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
       potential: body.potential || 'medium',
       category,
       categoryGroup: body.categoryGroup || 'technical',
+      categoryType: body.categoryType || 'technical',
       targetBuyer: body.targetBuyer || '',
       customerPerspective: body.customerPerspective || '',
       differentiator: body.differentiator || '',
+      championedBy: body.championedBy || [],
+      challengedBy: body.challengedBy || [],
+      panelNotes: body.panelNotes || '',
+      architectureDiagram: body.architectureDiagram || '',
+      sapModules: body.sapModules || [],
       status: body.status || 'active',
       order: body.order ?? 0,
       createdAt: now,
       createdBy: userId,
+      updatedAt: now,
     };
+
+    // Optional nested / scalar fields — only persist if supplied
+    if (body.costEstimate !== undefined) {
+      item.costEstimate = body.costEstimate;
+    }
+    if (body.sourceSessionId !== undefined) {
+      item.sourceSessionId = body.sourceSessionId;
+    }
 
     await ddb.send(
       new PutCommand({

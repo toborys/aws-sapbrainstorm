@@ -41,6 +41,15 @@ export interface GeneratedIdea {
   championedBy: string[];
   challengedBy: string[];
   panelNotes: string;
+  // --- Extended optional fields ---
+  architectureDiagram?: string;
+  sapModules?: string[];
+  costEstimate?: {
+    devEur: number;
+    prodEur: number;
+    assumptions: string;
+  };
+  sourceSessionId?: string;
 }
 
 export interface BrainstormSession {

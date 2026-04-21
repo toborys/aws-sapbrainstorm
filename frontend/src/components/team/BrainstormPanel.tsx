@@ -266,8 +266,9 @@ export default function BrainstormPanel() {
 
     try {
       // Step 1: Start async brainstorm
+      // 'Any' sends 'all' — backend brainstorm-worker handles 'all' as no category filter
       const startResult = await startBrainstorm({
-        category: category === 'Any' ? ('Cloud & Infrastructure' as IdeaCategory) : (category as IdeaCategory),
+        category: (category === 'Any' ? 'all' : category) as IdeaCategory,
         prompt: buildPrompt(),
         count: ideaCount,
         agents: Array.from(selectedAgents),
@@ -395,22 +396,14 @@ export default function BrainstormPanel() {
     setAddingIdea(key)
     try {
       await createIdea({
-        name: idea.name,
-        tagline: idea.tagline,
-        problem: idea.problem,
-        solution: idea.solution,
-        architecture: idea.architecture,
-        complexity: idea.complexity,
-        mvpTime: idea.mvpTime,
-        risk: idea.risk,
-        riskNote: idea.riskNote,
-        mrr: idea.mrr,
-        model: idea.model,
-        selfService: idea.selfService,
-        potential: idea.potential,
+        // Spread the whole generated idea — preserves championedBy, challengedBy,
+        // panelNotes, categoryType, categoryGroup, targetBuyer, customerPerspective,
+        // differentiator, awsServices, architectureDiagram, sapModules, costEstimate
+        ...idea,
         category: (idea.category as IdeaCategory) || 'Cloud & Infrastructure',
         status: 'active',
         order: ideas.length + 1,
+        sourceSessionId: brainstormResult?.sessionId,
       })
       addToast({ type: 'success', message: `Added "${idea.name}" to portfolio` })
       fetchIdeas()
@@ -438,22 +431,12 @@ export default function BrainstormPanel() {
         const idea = brainstormResult.ideas[i]
         try {
           await createIdea({
-            name: idea.name,
-            tagline: idea.tagline,
-            problem: idea.problem,
-            solution: idea.solution,
-            architecture: idea.architecture,
-            complexity: idea.complexity,
-            mvpTime: idea.mvpTime,
-            risk: idea.risk,
-            riskNote: idea.riskNote,
-            mrr: idea.mrr,
-            model: idea.model,
-            selfService: idea.selfService,
-            potential: idea.potential,
+            // Spread entire generated idea — retain all extended fields
+            ...idea,
             category: (idea.category as IdeaCategory) || 'Cloud & Infrastructure',
             status: 'active',
             order: ideas.length + i + 1,
+            sourceSessionId: brainstormResult.sessionId,
           })
           count++
         } catch {

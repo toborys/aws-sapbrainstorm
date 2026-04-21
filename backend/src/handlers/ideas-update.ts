@@ -22,8 +22,10 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     const allowedFields = [
       'name', 'tagline', 'problem', 'solution', 'architecture', 'awsServices',
       'complexity', 'mvpTime', 'risk', 'riskNote', 'mrr', 'model',
-      'selfService', 'potential', 'category', 'categoryGroup',
+      'selfService', 'potential', 'category', 'categoryGroup', 'categoryType',
       'targetBuyer', 'customerPerspective', 'differentiator',
+      'championedBy', 'challengedBy', 'panelNotes',
+      'architectureDiagram', 'sapModules', 'costEstimate', 'sourceSessionId',
       'status', 'order',
     ];
 
