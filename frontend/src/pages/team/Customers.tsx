@@ -23,7 +23,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
-import { inviteCustomer, bulkInviteCustomers, type BulkInviteResult } from '../../api/client'
+import { inviteCustomer, bulkInviteCustomers, resendInvite, type BulkInviteResult } from '../../api/client'
 import { useCustomersStore } from '../../stores/customersStore'
 import { useUiStore } from '../../stores/uiStore'
 import type { UserProfile } from '../../types'
@@ -167,8 +167,22 @@ export default function TeamCustomers() {
     }
   }
 
-  const handleResend = (_userId: string) => {
-    addToast({ type: 'info', message: 'Resend invitations: Coming soon' })
+  const handleResend = async (customer: UserProfile) => {
+    try {
+      const result = await resendInvite(customer.email)
+      if (result.status === 'new-temp-password' && result.tempPassword) {
+        // Copy temp password to clipboard + show it in toast so team can share manually
+        await navigator.clipboard.writeText(result.tempPassword).catch(() => {})
+        addToast({
+          type: 'success',
+          message: `New temp password generated (copied to clipboard): ${result.tempPassword}`,
+        })
+      } else {
+        addToast({ type: 'success', message: result.message })
+      }
+    } catch (err) {
+      addToast({ type: 'error', message: `Failed to resend: ${(err as Error).message}` })
+    }
   }
 
   const resetBulkState = () => {
@@ -416,7 +430,7 @@ export default function TeamCustomers() {
                   <div className="flex items-center gap-2 shrink-0">
                     {status !== 'voted' && (
                       <button
-                        onClick={() => handleResend(customer.userId)}
+                        onClick={() => handleResend(customer)}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-accent hover:bg-accent/10 transition-colors cursor-pointer"
                       >
                         <RotateCw className="w-3.5 h-3.5" />

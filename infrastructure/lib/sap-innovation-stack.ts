@@ -304,6 +304,20 @@ export class SapInnovationStack extends cdk.Stack {
       resources: [customerPool.userPoolArn],
     }));
 
+    const adminCustomersResendFn = createLambda(
+      'AdminCustomersResend',
+      'dist/handlers/admin-customers-resend.handler',
+      { memory: 256, timeout: 15 },
+    );
+    adminCustomersResendFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'cognito-idp:AdminResetUserPassword',
+        'cognito-idp:AdminGetUser',
+        'cognito-idp:AdminCreateUser',
+      ],
+      resources: [customerPool.userPoolArn],
+    }));
+
     const adminCustomersUpdateFn = createLambda('AdminCustomersUpdate', 'dist/handlers/admin-customers-update.handler');
     const adminExportFn = createLambda('AdminExport', 'dist/handlers/admin-export.handler');
     dataBucket.grantWrite(adminExportFn);
@@ -516,6 +530,12 @@ export class SapInnovationStack extends cdk.Stack {
       path: '/api/admin/customers/{id}',
       methods: [apigatewayv2.HttpMethod.PUT],
       integration: new integrations.HttpLambdaIntegration('AdminCustUpdInt', adminCustomersUpdateFn),
+      authorizer: teamAuthorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/admin/customers/{id}/resend',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration('AdminCustResendInt', adminCustomersResendFn),
       authorizer: teamAuthorizer,
     });
     httpApi.addRoutes({

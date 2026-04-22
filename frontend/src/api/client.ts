@@ -178,8 +178,13 @@ export function bulkInviteCustomers(data: Array<{ email: string; company: string
   })
 }
 
-export function resendInvite(userId: string) {
-  return request<void>(`/api/admin/customers/${userId}/resend`, {
+export function resendInvite(customerId: string) {
+  return request<{
+    status: 'resent' | 'password-reset-triggered' | 'new-temp-password'
+    userStatus?: string
+    message: string
+    tempPassword?: string
+  }>(`/api/admin/customers/${encodeURIComponent(customerId)}/resend`, {
     method: 'POST',
   })
 }
