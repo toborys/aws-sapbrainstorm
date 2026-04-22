@@ -29,6 +29,7 @@ import { MermaidDiagram } from '../ui/MermaidDiagram'
 import { BRAINSTORM_AGENTS } from '../../config/agents'
 import { useUiStore } from '../../stores/uiStore'
 import { generateBuildKit, pushIdeaToGithub } from '../../api/client'
+import { downloadIdeaPdf } from '../../lib/pdf-idea'
 import type { Idea } from '../../types'
 
 interface GithubPushResult {
@@ -870,6 +871,24 @@ function BuildKitTab({
               icon={<Sparkles className="w-4 h-4" />}
             >
               Evolve with Advisory Panel
+            </Button>
+          </div>
+        </div>
+
+        {/* Export as PDF */}
+        <div className="w-full max-w-md pt-2 mt-2 border-t border-border">
+          <p className="text-xs text-text-muted text-center mb-3 leading-relaxed">
+            Download the full idea spec as a formatted PDF — problem, solution,
+            technical profile, economics, architecture, and advisory panel notes.
+          </p>
+          <div className="flex justify-center">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => downloadIdeaPdf(idea)}
+              icon={<FileText className="w-4 h-4" />}
+            >
+              Export as PDF
             </Button>
           </div>
         </div>

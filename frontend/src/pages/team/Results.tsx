@@ -20,6 +20,7 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useIdeasStore } from '../../stores/ideasStore'
 import { useResultsStore } from '../../stores/resultsStore'
+import { downloadResultsPdf } from '../../lib/pdf-results'
 import type { IdeaCategory, AggregatedIdeaResult, PilotListEntry } from '../../types'
 
 const CATEGORIES: IdeaCategory[] = [
@@ -210,7 +211,13 @@ export default function TeamResults() {
   }
 
   const handleExportPDF = () => {
-    window.print()
+    downloadResultsPdf({
+      ideas: (voteResults?.ideas as AggregatedIdeaResult[]) || [],
+      pilotList: (voteResults?.pilotList as PilotListEntry[]) || [],
+      totalVotes: voteResults?.totalVotes ?? 0,
+      uniqueVoters: voteResults?.uniqueVoters ?? 0,
+      generatedAt: voteResults?.updatedAt,
+    })
   }
 
   if (loading) {

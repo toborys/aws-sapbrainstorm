@@ -10,7 +10,10 @@
       "Bash(npm install *)",
       "Bash(rm -rf dist)",
       "Bash(npm run *)",
-      "Read(//c/Users/tomek/Documents/GitHub/**)"
+      "Read(//c/Users/tomek/Documents/GitHub/**)",
+      "Bash(VITE_API_URL=\"\" VITE_CUSTOMER_POOL_ID=eu-central-1_tQmdRzMpc VITE_CUSTOMER_CLIENT_ID=11pec9e94kt3c41g67386phra5 VITE_TEAM_POOL_ID=eu-central-1_ZSvbXkcsz VITE_TEAM_CLIENT_ID=20glu5jbhfcv2e036v7ipn1mlh VITE_AWS_REGION=eu-central-1 npm run build)",
+      "Bash(aws s3 *)",
+      "Bash(aws cloudfront *)"
     ]
   }
 }
